@@ -1,364 +1,349 @@
-import React from 'react';
-import { TrendingUp, AlertCircle, CheckCircle, Wallet, Plus, ArrowUpRight } from 'lucide-react';
+import { useState } from 'react';
+import { Fuel, Plus, ChevronRight, Award, Smartphone } from 'lucide-react';
 
-const CATEGORIES = {
-  Utilities: { color: 'from-blue-500 to-indigo-600', text: 'text-blue-400', bg: 'bg-blue-500/10' },
-  Rent: { color: 'from-purple-500 to-pink-600', text: 'text-purple-400', bg: 'bg-purple-500/10' },
-  Subscriptions: { color: 'from-amber-500 to-orange-600', text: 'text-amber-400', bg: 'bg-amber-500/10' },
-  Food: { color: 'from-emerald-500 to-teal-600', text: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  Leisure: { color: 'from-rose-500 to-red-600', text: 'text-rose-400', bg: 'bg-rose-500/10' },
-  Savings: { color: 'from-teal-400 to-emerald-500', text: 'text-teal-400', bg: 'bg-teal-500/10' },
-  Other: { color: 'from-slate-400 to-slate-600', text: 'text-slate-400', bg: 'bg-slate-500/10' },
-};
+const QUICK_PLATFORMS = [
+  { id: 'Local', label: 'Local Ride', icon: '🛺', color: 'bg-slate-700/80 text-white hover:bg-slate-650' },
+  { id: 'Uber', label: 'Uber Auto', icon: '⚫', color: 'bg-black text-white hover:bg-slate-900 border border-slate-800' },
+  { id: 'Ola', label: 'Ola Auto', icon: '🟢', color: 'bg-lime-500/90 text-slate-950 hover:bg-lime-400 font-bold' },
+  { id: 'Rapido', label: 'Rapido Captain', icon: '🟡', color: 'bg-yellow-400/90 text-slate-950 hover:bg-yellow-350 font-bold' },
+  { id: 'Namma Yatri', label: 'Namma Yatri', icon: '🟠', color: 'bg-orange-500/90 text-white hover:bg-orange-400' }
+];
 
 export default function Dashboard({ 
-  bills, 
-  budget, 
-  setBudget, 
-  onOpenAddModal,
-  savingsBalance,
-  setSavingsBalance,
-  savingsGoal,
-  setSavingsGoal
+  rides, 
+  expenses, 
+  dailyTarget, 
+  setDailyTarget, 
+  onQuickRideSubmit,
+  onOpenAddRideModal,
+  onOpenAddExpenseModal,
+  setActiveTab
 }) {
-  const paidBills = bills.filter(b => b.status === 'Paid');
-  const unpaidBills = bills.filter(b => b.status === 'Unpaid');
+  const [quickAmount, setQuickAmount] = useState('');
+  const [quickPlatform, setQuickPlatform] = useState('Local');
 
-  const totalSpent = paidBills.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-  const totalPending = unpaidBills.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+  // Filter today's items
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayRides = rides.filter(r => r.date === todayStr);
+  const todayExpenses = expenses.filter(e => e.date === todayStr);
 
-  const budgetUsagePercent = budget > 0 ? Math.min(Math.round((totalSpent / budget) * 100), 100) : 0;
-  const isBudgetExceeded = totalSpent > budget;
+  // Summaries
+  const todayGross = todayRides.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+  const todayNetEarnings = todayGross;
+  
+  const todayFuel = todayExpenses
+    .filter(e => e.category === 'CNG/Fuel')
+    .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+  const todayAllExpenses = todayExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
 
-  // Group spent money by category
-  const categorySpent = bills.reduce((acc, bill) => {
-    if (bill.status === 'Paid') {
-      acc[bill.category] = (acc[bill.category] || 0) + parseFloat(bill.amount || 0);
+  const netProfitToday = todayNetEarnings - todayAllExpenses;
+
+  // Daily target progress calculations
+  const targetProgress = dailyTarget > 0 ? Math.min(Math.round((todayNetEarnings / dailyTarget) * 100), 100) : 0;
+  const isTargetAchieved = todayNetEarnings >= dailyTarget && dailyTarget > 0;
+
+  // SVG Circular Progress Wheel calculations
+  const radius = 60;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (targetProgress / 100) * circumference;
+
+  const handleQuickLog = (e) => {
+    e.preventDefault();
+    const amount = parseFloat(quickAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid fare amount.');
+      return;
     }
-    return acc;
-  }, {});
 
-  const maxSpentInCategory = Math.max(...Object.values(categorySpent), 1);
-
-  // Frequency breakdowns
-  const weeklyPaid = paidBills.filter(b => b.frequency === 'Weekly');
-  const weeklyUnpaid = unpaidBills.filter(b => b.frequency === 'Weekly');
-  const weeklySpentSum = weeklyPaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-  const weeklyPendingSum = weeklyUnpaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-
-  const monthlyPaid = paidBills.filter(b => b.frequency === 'Monthly');
-  const monthlyUnpaid = unpaidBills.filter(b => b.frequency === 'Monthly');
-  const monthlySpentSum = monthlyPaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-  const monthlyPendingSum = monthlyUnpaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-
-  const oneTimePaid = paidBills.filter(b => !b.frequency || b.frequency === 'One-time');
-  const oneTimeUnpaid = unpaidBills.filter(b => !b.frequency || b.frequency === 'One-time');
-  const oneTimeSpentSum = oneTimePaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-  const oneTimePendingSum = oneTimeUnpaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-
-  const savingsProgressPercent = savingsGoal > 0 ? Math.min(Math.round((savingsBalance / savingsGoal) * 100), 100) : 0;
+    onQuickRideSubmit(quickPlatform, amount);
+    setQuickAmount('');
+    // Pulse animation or notification would be nice
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Top Welcome / Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-500 bg-clip-text text-transparent">
-            Financial Dashboard
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-yellow-450 to-amber-500 bg-clip-text text-transparent">
+            Captain Dashboard
           </h1>
           <p className="text-slate-400 mt-1 text-sm md:text-base">
-            Keep track of your monthly budget, active bills, and recent spent items.
+            Track daily ride targets and manage fuel costs.
           </p>
         </div>
-        <button
-          onClick={onOpenAddModal}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-semibold shadow-lg shadow-teal-500/15 transition-all hover:-translate-y-0.5 cursor-pointer"
-        >
-          <Plus size={20} />
-          <span>Add New Record</span>
-        </button>
+        <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={onOpenAddRideModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold shadow-lg shadow-amber-500/10 transition-all hover:-translate-y-0.5 cursor-pointer text-xs sm:text-sm"
+          >
+            <Plus size={16} />
+            <span>Detailed Ride</span>
+          </button>
+          <button
+            onClick={onOpenAddExpenseModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-rose-500/20 text-rose-400 hover:bg-slate-850 hover:text-rose-350 transition-all text-xs sm:text-sm cursor-pointer"
+          >
+            <Fuel size={16} className="text-rose-450" />
+            <span>Log Expense</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Spent card */}
-        <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <TrendingUp size={100} className="text-teal-400" />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Total Spent</span>
-            <span className="p-2 rounded-lg bg-teal-500/10 text-teal-400">
-              <TrendingUp size={20} />
-            </span>
-          </div>
-          <div className="mt-4">
-            <span className="text-3xl font-bold tracking-tight text-white">₹{totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="block text-xs text-teal-400/80 mt-1">Confirmed Paid Payments</span>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Gross earnings card */}
+        <div className="glass-card p-5 rounded-2xl relative overflow-hidden group border border-amber-500/10">
+          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Today's Earnings</span>
+          <span className="text-xl sm:text-2xl font-black text-emerald-400 mt-2 block">₹{todayGross.toLocaleString()}</span>
+          <span className="text-[9px] text-slate-500 block mt-0.5">Total collected: {todayRides.length} rides</span>
         </div>
 
-        {/* Pending Card */}
-        <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <AlertCircle size={100} className="text-rose-400" />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Unpaid Bills</span>
-            <span className="p-2 rounded-lg bg-rose-500/10 text-rose-400">
-              <AlertCircle size={20} />
-            </span>
-          </div>
-          <div className="mt-4">
-            <span className="text-3xl font-bold tracking-tight text-white">₹{totalPending.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="block text-xs text-rose-400/80 mt-1">{unpaidBills.length} payments outstanding</span>
-          </div>
+        {/* Fuel & Expenses Spent */}
+        <div className="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Daily CNG & Expenses</span>
+          <span className="text-xl sm:text-2xl font-black text-rose-400 mt-2 block">₹{todayAllExpenses.toLocaleString()}</span>
+          <span className="text-[9px] text-slate-500 block mt-0.5">Fuel CNG: ₹{todayFuel.toLocaleString()}</span>
         </div>
 
-        {/* Budget Card */}
-        <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Wallet size={100} className="text-indigo-400" />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Monthly Budget</span>
-            <span className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-              <Wallet size={20} />
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">₹</span>
+        {/* Today's Net Profit */}
+        <div className="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Today's Net Profit</span>
+          <span className="text-xl sm:text-2xl font-black text-slate-100 mt-2 block">₹{netProfitToday.toLocaleString()}</span>
+          <span className="text-[9px] text-slate-550 block mt-0.5">Earnings minus expenses</span>
+        </div>
+      </div>
+
+      {/* Target Progress Wheel & Quick logging columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Radial Target Progress block */}
+        <div className="glass-card p-6 rounded-2xl border border-slate-850 flex flex-col justify-between items-center text-center">
+          <div className="w-full text-left flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-base text-slate-200">Daily Target</h3>
+              <p className="text-[10px] text-slate-400">Keep tracking daily milestones</p>
+            </div>
+            
+            {/* Input to dynamically set Daily Target */}
+            <div className="flex items-center gap-1 bg-slate-950/65 px-2.5 py-1 rounded-xl border border-slate-800">
+              <span className="text-slate-500 text-xs font-semibold">₹</span>
               <input
                 type="number"
-                value={budget}
-                onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
-                className="text-3xl font-bold tracking-tight text-white bg-transparent border-b border-transparent hover:border-indigo-500 focus:border-indigo-400 focus:outline-none w-36 transition-all"
-                title="Click to change budget"
-              />
-            </div>
-            <span className="block text-xs text-indigo-400/80 mt-1">Click value to edit budget</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Savings Goal Tracker */}
-      <div className="glass-card p-6 rounded-2xl relative border border-slate-800">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-4">
-          <div>
-            <h3 className="font-bold text-lg text-slate-200">Savings Goal Tracker</h3>
-            <p className="text-xs text-slate-400">Set a target savings goal and track your active progress</p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <div className="space-y-1">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Savings Balance</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 text-xs font-bold">₹</span>
-                <input
-                  type="number"
-                  value={savingsBalance}
-                  onChange={(e) => setSavingsBalance(parseFloat(e.target.value) || 0)}
-                  className="w-28 bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-1.5 text-sm text-white font-bold focus:outline-none focus:border-teal-500"
-                  title="Click to change savings balance"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Savings Goal</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 text-xs font-bold">₹</span>
-                <input
-                  type="number"
-                  value={savingsGoal}
-                  onChange={(e) => setSavingsGoal(parseFloat(e.target.value) || 0)}
-                  className="w-28 bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-1.5 text-sm text-white font-bold focus:outline-none focus:border-teal-500"
-                  title="Click to change savings goal"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        {savingsGoal > 0 ? (
-          <div>
-            <div className="flex justify-between items-center mb-1 text-xs">
-              <span className="text-teal-400 font-semibold">Progress: {savingsProgressPercent}%</span>
-              <span className="text-slate-400">₹{savingsBalance.toLocaleString()} / ₹{savingsGoal.toLocaleString()}</span>
-            </div>
-            <div className="w-full bg-slate-850 rounded-full h-3 overflow-hidden border border-slate-800/40">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-teal-400 to-indigo-500 transition-all duration-500"
-                style={{ width: `${savingsProgressPercent}%` }}
+                value={dailyTarget}
+                onChange={(e) => setDailyTarget(parseFloat(e.target.value) || 0)}
+                className="w-14 text-xs font-bold text-slate-100 bg-transparent focus:outline-none text-center"
+                title="Change Daily Target"
               />
             </div>
           </div>
-        ) : (
-          <p className="text-xs text-slate-500">Set a savings goal to begin tracking progress.</p>
-        )}
-      </div>
 
-      {/* Frequency Breakdown Summaries */}
-      <div className="space-y-4">
-        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Payment Frequency Summaries</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Weekly card */}
-          <div className="glass-card p-5 rounded-2xl border border-slate-800/80">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-bold text-slate-200">Weekly Payments</span>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 uppercase border border-blue-500/20">Weekly</span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>Total Spent:</span>
-                <span className="font-semibold text-emerald-400">₹{weeklySpentSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>Total Pending:</span>
-                <span className="font-semibold text-rose-400">₹{weeklyPendingSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
+          {/* SVG Progress Circle Wheel */}
+          <div className="relative my-6 flex items-center justify-center">
+            <svg className="w-36 h-36 transform -rotate-90">
+              {/* Underlay Circle */}
+              <circle
+                cx="72"
+                cy="72"
+                r={radius}
+                className="stroke-slate-900 fill-none"
+                strokeWidth="10"
+              />
+              {/* Overlay active Circle */}
+              <circle
+                cx="72"
+                cy="72"
+                r={radius}
+                className={`fill-none transition-all duration-700 ease-out ${
+                  isTargetAchieved ? 'stroke-emerald-400' : 'stroke-amber-400'
+                }`}
+                strokeWidth="10"
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center">
+              <span className={`text-2xl font-black ${isTargetAchieved ? 'text-emerald-400' : 'text-slate-100'}`}>
+                {targetProgress}%
+              </span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Completed</span>
             </div>
           </div>
 
-          {/* Monthly card */}
-          <div className="glass-card p-5 rounded-2xl border border-slate-800/80">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-bold text-slate-200">Monthly Payments</span>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 uppercase border border-indigo-500/20">Monthly</span>
+          <div className="space-y-1 w-full">
+            <div className="flex justify-between text-xs text-slate-400">
+              <span>Today's Profit:</span>
+              <span className={`font-bold ${netProfitToday >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                ₹{netProfitToday}
+              </span>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>Total Spent:</span>
-                <span className="font-semibold text-emerald-400">₹{monthlySpentSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>Total Pending:</span>
-                <span className="font-semibold text-rose-400">₹{monthlyPendingSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
+            <div className="flex justify-between text-xs text-slate-400">
+              <span>Earnings Target:</span>
+              <span className="font-semibold text-slate-200">₹{todayNetEarnings} / ₹{dailyTarget}</span>
             </div>
           </div>
 
-          {/* One-Time card */}
-          <div className="glass-card p-5 rounded-2xl border border-slate-800/80">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-bold text-slate-200">One-Time Payments</span>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 uppercase border border-teal-500/20">One-Time</span>
+          {isTargetAchieved && (
+            <div className="mt-4 flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 font-semibold animate-bounce">
+              <Award size={14} />
+              <span>Target Achieved! Good Job! 🎉</span>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>Total Spent:</span>
-                <span className="font-semibold text-emerald-400">₹{oneTimeSpentSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>Total Pending:</span>
-                <span className="font-semibold text-rose-400">₹{oneTimePendingSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
-      </div>
 
-      {/* Budget Meter & Progress bar */}
-      <div className="glass-card p-6 rounded-2xl">
-        <div className="flex justify-between items-center mb-3">
+        {/* High Speed Quick Logging Panel */}
+        <div className="lg:col-span-2 glass-card p-6 rounded-2xl border border-slate-850 flex flex-col justify-between">
           <div>
-            <h3 className="font-bold text-lg text-slate-200">Budget Usage</h3>
-            <p className="text-xs text-slate-400">Based on total spent vs. monthly limit</p>
+            <h3 className="font-bold text-base text-slate-200 mb-2 flex items-center gap-1.5">
+              <Smartphone size={16} className="text-amber-550" />
+              <span>Quick Log Ride Fare</span>
+            </h3>
+            <p className="text-xs text-slate-450 mb-5">Instantly log cash/app payments after a drop-off in a single click.</p>
+            
+            <form onSubmit={handleQuickLog} className="space-y-4">
+              {/* Quick Select Buttons */}
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                {QUICK_PLATFORMS.map((plat) => {
+                  const isSelected = quickPlatform === plat.id;
+                  return (
+                    <button
+                      key={plat.id}
+                      type="button"
+                      onClick={() => setQuickPlatform(plat.id)}
+                      className={`py-2 rounded-xl text-[10px] font-semibold border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                        isSelected
+                          ? `${plat.color} border-transparent shadow-md shadow-amber-500/5`
+                          : 'bg-slate-900/40 border-slate-800 text-slate-350 hover:bg-slate-900/90'
+                      }`}
+                    >
+                      <span className="text-sm">{plat.icon}</span>
+                      <span>{plat.label.split(' ')[0]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Fare Entry */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none text-sm font-bold">₹</span>
+                  <input
+                    type="number"
+                    required
+                    step="1"
+                    min="1"
+                    placeholder="Enter ride fare amount (e.g. 120)"
+                    value={quickAmount}
+                    onChange={(e) => setQuickAmount(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-4 py-3.5 text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm font-bold"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-3.5 bg-amber-500 hover:bg-amber-450 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-amber-500/10 transition-all cursor-pointer hover:-translate-y-0.5"
+                >
+                  Quick Log
+                </button>
+              </div>
+            </form>
           </div>
-          <div className="text-right">
-            <span className={`text-lg font-bold ${isBudgetExceeded ? 'text-rose-400' : 'text-teal-400'}`}>
-              {budgetUsagePercent}%
-            </span>
-            <span className="text-xs text-slate-400 block">
-              ₹{totalSpent.toFixed(0)} / ₹{budget.toFixed(0)}
-            </span>
-          </div>
+
+          <div className="border-t border-slate-850 my-4" />
+
+          {/* Quick instructions / disclaimer */}
+          <p className="text-[10px] text-slate-455 leading-normal">
+            💡 Quick log automatically defaults the payment mode based on your booking channel. Use the "Detailed Ride" button in the top-right to log custom locations, notes, or ride distances.
+          </p>
         </div>
-        <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              isBudgetExceeded ? 'bg-gradient-to-r from-red-500 to-rose-600' : 'bg-gradient-to-r from-teal-400 to-cyan-500'
-            }`}
-            style={{ width: `${budgetUsagePercent}%` }}
-          />
-        </div>
-        {isBudgetExceeded && (
-          <div className="flex items-center gap-2 mt-3 text-xs text-rose-400">
-            <AlertCircle size={14} />
-            <span>Warning: You have exceeded your set monthly budget!</span>
-          </div>
-        )}
       </div>
 
-      {/* Category Breakdown list */}
+      {/* Recent Activity lists */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Recent rides logged */}
         <div className="lg:col-span-2 glass-card p-6 rounded-2xl">
-          <h3 className="font-bold text-lg text-slate-200 mb-6 flex items-center gap-2">
-            <span>Spending by Category</span>
-            <ArrowUpRight size={18} className="text-slate-400" />
-          </h3>
-          <div className="space-y-5">
-            {Object.keys(CATEGORIES).map(catName => {
-              const spent = categorySpent[catName] || 0;
-              const percentOfMax = Math.min((spent / maxSpentInCategory) * 100, 100);
-              const theme = CATEGORIES[catName];
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="font-bold text-base text-slate-200">Recent Rides Logged</h3>
+            <button
+              onClick={() => setActiveTab('rides')}
+              className="text-xs text-amber-400 hover:text-amber-350 font-semibold flex items-center gap-0.5 cursor-pointer"
+            >
+              <span>View All Rides</span>
+              <ChevronRight size={12} />
+            </button>
+          </div>
 
-              return (
-                <div key={catName} className="space-y-1">
-                  <div className="flex justify-between text-sm font-medium">
-                    <span className="text-slate-300">{catName}</span>
-                    <span className="text-slate-200 font-bold">₹{spent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <div className="space-y-3">
+            {todayRides.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-500 bg-slate-950/45 rounded-xl border border-dashed border-slate-850">
+                No rides logged yet today. Use the Quick Log panel above!
+              </div>
+            ) : (
+              todayRides.slice(0, 4).map((ride) => (
+                <div key={ride.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-900/35 border border-slate-850 text-xs">
+                  <div className="flex items-center gap-3">
+                    <span className="text-base">
+                      {ride.platform === 'Uber' && '⚫'}
+                      {ride.platform === 'Ola' && '🟢'}
+                      {ride.platform === 'Rapido' && '🟡'}
+                      {ride.platform === 'Namma Yatri' && '🟠'}
+                      {ride.platform === 'Local' && '🛺'}
+                      {ride.platform === 'Other' && '📱'}
+                    </span>
+                    <div>
+                      <span className="font-bold text-slate-100 block">
+                        {ride.notes ? ride.notes : `${ride.platform} Auto Ride`}
+                      </span>
+                      <span className="text-[10px] text-slate-450">Via {ride.paymentMode}</span>
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-800/50 rounded-full h-2">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${theme.color} transition-all duration-300`}
-                      style={{ width: spent > 0 ? `${percentOfMax}%` : '0%' }}
-                    />
+                  <div className="text-right flex items-center justify-end">
+                    <span className="font-black text-slate-100 text-sm">₹{ride.amount.toFixed(0)}</span>
                   </div>
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
 
-        {/* Quick Tips or Overview Breakdown counts */}
+        {/* Expenses and Tip callout */}
         <div className="glass-card p-6 rounded-2xl flex flex-col justify-between">
           <div>
-            <h3 className="font-bold text-lg text-slate-200 mb-4">Payment Summary</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-slate-800">
-                <div className="flex items-center gap-3">
-                  <span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-                    <CheckCircle size={18} />
-                  </span>
-                  <div>
-                    <span className="block text-sm font-medium text-slate-300">Paid Items</span>
-                    <span className="text-xs text-slate-500">Payments cleared</span>
-                  </div>
-                </div>
-                <span className="text-base font-bold text-white">{paidBills.length}</span>
-              </div>
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-bold text-base text-slate-200">Daily Expenses</h3>
+              <button
+                onClick={() => setActiveTab('expenses')}
+                className="text-xs text-rose-400 hover:text-rose-350 font-semibold flex items-center gap-0.5 cursor-pointer"
+              >
+                <span>View Details</span>
+                <ChevronRight size={12} />
+              </button>
+            </div>
 
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-slate-800">
-                <div className="flex items-center gap-3">
-                  <span className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-                    <AlertCircle size={18} />
-                  </span>
-                  <div>
-                    <span className="block text-sm font-medium text-slate-300">Unpaid Bills</span>
-                    <span className="text-xs text-slate-500">Need attention</span>
-                  </div>
+            <div className="space-y-3">
+              {todayExpenses.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500 bg-slate-950/45 rounded-xl border border-dashed border-slate-855">
+                  No expenses logged today.
                 </div>
-                <span className="text-base font-bold text-white">{unpaidBills.length}</span>
-              </div>
+              ) : (
+                todayExpenses.slice(0, 3).map((exp) => (
+                  <div key={exp.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-900/35 border border-slate-855 text-xs">
+                    <div>
+                      <span className="font-bold text-slate-150 block">{exp.notes ? exp.notes : exp.category}</span>
+                      <span className="text-[9px] text-slate-550">{exp.category}</span>
+                    </div>
+                    <span className="font-bold text-rose-450">-₹{exp.amount.toFixed(0)}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
-            <h4 className="text-sm font-semibold text-indigo-300 mb-1">Budgeting Tip</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Plan your subscriptions and recurrent utilities at the start of the month. Try keeping at least 15% of your budget for unforeseen expenses.
+          <div className="mt-5 p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-indigo-500/10 border border-amber-500/10">
+            <h4 className="text-xs font-bold text-amber-400 mb-0.5">Auto Captain Tip</h4>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              Running direct/street rides saves app commission cuts (e.g. up to 20%). Try balancing Local Rides with app pickups in high demand areas to maximize margins.
             </p>
           </div>
         </div>
