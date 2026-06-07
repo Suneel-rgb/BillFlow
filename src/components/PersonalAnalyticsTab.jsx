@@ -51,18 +51,19 @@ export default function PersonalAnalyticsTab({ bills, personalExpenses }) {
   const handleExportCSV = () => {
     // 1. Headers
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Type,Title/Category,Amount (INR),Date/Due Date,Payment Mode,Status/Notes\n";
+    csvContent += "Type,Title/Category,Amount (INR),Date/Due Date,Payment Mode,Status/Notes,Frequency\n";
 
     // 2. Add Bills
     bills.forEach(b => {
       const escapedTitle = (b.title || "").replace(/,/g, " ");
-      csvContent += `Bill,${escapedTitle},${b.amount},${b.dueDate},${b.paymentMode},${b.status}\n`;
+      const freq = b.frequency || "Monthly";
+      csvContent += `Bill,${escapedTitle},${b.amount},${b.dueDate},${b.paymentMode},${b.status},${freq}\n`;
     });
 
     // 3. Add Expenses
     personalExpenses.forEach(e => {
       const escapedNotes = (e.notes || "").replace(/,/g, " ");
-      csvContent += `Expense,${e.category},${e.amount},${e.date},${e.paymentMode},${escapedNotes}\n`;
+      csvContent += `Expense,${e.category},${e.amount},${e.date},${e.paymentMode},${escapedNotes},One-time\n`;
     });
 
     // 4. Download Trigger

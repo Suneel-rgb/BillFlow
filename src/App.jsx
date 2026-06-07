@@ -340,7 +340,8 @@ export default function App() {
         category: formData.category,
         dueDate: formData.dueDate,
         paymentMode: formData.paymentMode,
-        status: formData.status
+        status: formData.status,
+        frequency: formData.frequency || 'Monthly'
       });
     } catch (err) {
       console.error("Database write error:", err);
@@ -370,7 +371,7 @@ export default function App() {
   };
 
   // 6. Quick Bill Log
-  const handleQuickBillSubmit = async (title, amount, category) => {
+  const handleQuickBillSubmit = async (title, amount, category, frequency = 'Monthly') => {
     if (!user) return;
     try {
       const newDocRef = doc(collection(db, 'users', user.uid, 'personal_bills'));
@@ -380,7 +381,8 @@ export default function App() {
         category,
         dueDate: new Date().toISOString().split('T')[0],
         paymentMode: 'UPI / Online',
-        status: 'Unpaid'
+        status: 'Unpaid',
+        frequency
       });
     } catch (err) {
       console.error("Database write error:", err);

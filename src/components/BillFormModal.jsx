@@ -25,6 +25,7 @@ export default function BillFormModal({ isOpen, onClose, onSubmit, editingBill }
         dueDate: editingBill.dueDate || '',
         paymentMode: editingBill.paymentMode || 'UPI / Online',
         status: editingBill.status || 'Unpaid',
+        frequency: editingBill.frequency || 'Monthly',
       };
     }
     return {
@@ -34,6 +35,7 @@ export default function BillFormModal({ isOpen, onClose, onSubmit, editingBill }
       dueDate: new Date().toISOString().split('T')[0],
       paymentMode: 'UPI / Online',
       status: 'Unpaid',
+      frequency: 'Monthly',
     };
   });
 
@@ -206,6 +208,39 @@ export default function BillFormModal({ isOpen, onClose, onSubmit, editingBill }
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Payment Cycle / Frequency selector */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold text-slate-450 uppercase tracking-wider">
+              Payment Cycle / Frequency *
+            </label>
+            <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs font-bold leading-none select-none w-full">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, frequency: 'Weekly' }))}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg transition-all cursor-pointer ${
+                  formData.frequency === 'Weekly' 
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10 font-bold' 
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>📅</span>
+                <span>Weekly Payment</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, frequency: 'Monthly' }))}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg transition-all cursor-pointer ${
+                  formData.frequency === 'Monthly' 
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10 font-bold' 
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>📆</span>
+                <span>Monthly Payment</span>
+              </button>
             </div>
           </div>
 

@@ -22,6 +22,7 @@ export default function PersonalDashboard({
   const [quickAmount, setQuickAmount] = useState('');
   const [quickCategory, setQuickCategory] = useState('Electricity');
   const [quickTitle, setQuickTitle] = useState('');
+  const [quickFrequency, setQuickFrequency] = useState('Monthly');
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [tempBudget, setTempBudget] = useState(personalBudget.toString());
 
@@ -40,6 +41,13 @@ export default function PersonalDashboard({
   
   const totalBillsTotal = thisMonthBills.reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
   const totalExpensesTotal = thisMonthExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+
+  const thisMonthMonthlyBillsTotal = thisMonthBills
+    .filter(b => (b.frequency || 'Monthly') === 'Monthly')
+    .reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
+  const thisMonthWeeklyBillsTotal = thisMonthBills
+    .filter(b => b.frequency === 'Weekly')
+    .reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
   
   // Total spending = paid bills + personal expenses
   const totalSpending = paidBillsTotal + totalExpensesTotal;
@@ -62,7 +70,7 @@ export default function PersonalDashboard({
     }
     const title = quickTitle.trim() || `${quickCategory} Bill`;
 
-    onQuickBillSubmit(title, amount, quickCategory);
+    onQuickBillSubmit(title, amount, quickCategory, quickFrequency);
     setQuickAmount('');
     setQuickTitle('');
   };
@@ -130,9 +138,9 @@ export default function PersonalDashboard({
 
         {/* Total Monthly Bills */}
         <div className="glass-card p-5 rounded-2xl relative overflow-hidden group border border-slate-800">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Logged Bills</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Monthly vs Weekly Bills</span>
           <span className="text-xl sm:text-2xl font-black text-slate-100 mt-2 block">₹{totalBillsTotal.toLocaleString()}</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">Total bills logged: {thisMonthBills.length}</span>
+          <span className="text-[9px] text-slate-555 block mt-0.5 font-semibold">Monthly: ₹{thisMonthMonthlyBillsTotal.toLocaleString()} | Weekly: ₹{thisMonthWeeklyBillsTotal.toLocaleString()}</span>
         </div>
       </div>
 
@@ -246,13 +254,13 @@ export default function PersonalDashboard({
             </div>
 
             <form onSubmit={handleQuickBill} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div className="sm:col-span-1">
-                  <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-1.5">Category</label>
+                  <label className="block text-[10px] font-bold text-slate-455 uppercase tracking-wider mb-1.5">Category</label>
                   <select
                     value={quickCategory}
                     onChange={(e) => setQuickCategory(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 appearance-none"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 appearance-none font-semibold"
                   >
                     {QUICK_CATEGORIES.map(c => (
                       <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
@@ -261,7 +269,7 @@ export default function PersonalDashboard({
                 </div>
 
                 <div className="sm:col-span-1">
-                  <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-1.5">Bill Name (Optional)</label>
+                  <label className="block text-[10px] font-bold text-slate-455 uppercase tracking-wider mb-1.5">Bill Name (Optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. BESCOM"
@@ -272,7 +280,7 @@ export default function PersonalDashboard({
                 </div>
 
                 <div className="sm:col-span-1">
-                  <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-1.5">Amount (₹)</label>
+                  <label className="block text-[10px] font-bold text-slate-455 uppercase tracking-wider mb-1.5">Amount (₹)</label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-xs font-bold pointer-events-none">₹</span>
                     <input
@@ -284,6 +292,18 @@ export default function PersonalDashboard({
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-7 pr-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-bold placeholder-slate-650"
                     />
                   </div>
+                </div>
+
+                <div className="sm:col-span-1">
+                  <label className="block text-[10px] font-bold text-slate-455 uppercase tracking-wider mb-1.5">Cycle</label>
+                  <select
+                    value={quickFrequency}
+                    onChange={(e) => setQuickFrequency(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 appearance-none font-semibold"
+                  >
+                    <option value="Monthly">Monthly</option>
+                    <option value="Weekly">Weekly</option>
+                  </select>
                 </div>
               </div>
 

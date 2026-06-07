@@ -17,6 +17,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [frequencyFilter, setFrequencyFilter] = useState('All');
   const [dateRange, setDateRange] = useState('All');
   const [sortBy, setSortBy] = useState('date-asc'); // default: oldest/nearest first for due bills
 
@@ -28,6 +29,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
     
     const matchesCategory = categoryFilter === 'All' || bill.category === categoryFilter;
     const matchesStatus = statusFilter === 'All' || bill.status === statusFilter;
+    const matchesFrequency = frequencyFilter === 'All' || (bill.frequency || 'Monthly') === frequencyFilter;
 
     let matchesDate = true;
     if (dateRange !== 'All' && bill.dueDate) {
@@ -47,7 +49,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
       }
     }
 
-    return matchesSearch && matchesCategory && matchesStatus && matchesDate;
+    return matchesSearch && matchesCategory && matchesStatus && matchesFrequency && matchesDate;
   });
 
   // Sorting Logic
@@ -67,7 +69,8 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
   });
 
   // KPI Calculations
-  const totalAmount = filteredBills.reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
+  const monthlyAmount = filteredBills.filter(b => (b.frequency || 'Monthly') === 'Monthly').reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
+  const weeklyAmount = filteredBills.filter(b => b.frequency === 'Weekly').reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
   const paidAmount = filteredBills.filter(b => b.status === 'Paid').reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
   const unpaidAmount = filteredBills.filter(b => b.status === 'Unpaid').reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
 
@@ -75,6 +78,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
     setSearchTerm('');
     setCategoryFilter('All');
     setStatusFilter('All');
+    setFrequencyFilter('All');
     setDateRange('All');
     setSortBy('date-asc');
   };
@@ -101,15 +105,20 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
       </div>
 
       {/* KPI Overview Widget */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-card p-4 rounded-2xl border border-emerald-500/10">
-          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block font-heading">Total Bills Fares</span>
-          <span className="text-xl font-black text-emerald-400 mt-1 block">₹{totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">{filteredBills.length} total bills loaded</span>
+          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block font-heading">Monthly Bills Total</span>
+          <span className="text-xl font-black text-emerald-450 mt-1 block">₹{monthlyAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+          <span className="text-[9px] text-slate-500 block mt-0.5">{filteredBills.filter(b => (b.frequency || 'Monthly') === 'Monthly').length} monthly bills</span>
         </div>
         <div className="glass-card p-4 rounded-2xl border border-slate-800">
-          <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider block font-heading">Paid Bills Total</span>
-          <span className="text-xl font-bold text-teal-400 mt-1 block">₹{paidAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+          <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider block font-heading">Weekly Bills Total</span>
+          <span className="text-xl font-bold text-teal-400 mt-1 block">₹{weeklyAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+          <span className="text-[9px] text-slate-500 block mt-0.5">{filteredBills.filter(b => b.frequency === 'Weekly').length} weekly bills</span>
+        </div>
+        <div className="glass-card p-4 rounded-2xl border border-slate-800">
+          <span className="text-[10px] font-bold text-emerald-455 uppercase tracking-wider block font-heading">Paid Bills Total</span>
+          <span className="text-xl font-bold text-emerald-450 mt-1 block">₹{paidAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
           <span className="text-[9px] text-slate-500 block mt-0.5">{filteredBills.filter(b => b.status === 'Paid').length} bills cleared</span>
         </div>
         <div className="glass-card p-4 rounded-2xl border border-slate-800">
@@ -137,7 +146,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
           </div>
 
           {/* Quick Clear Filter Button */}
-          {(searchTerm || categoryFilter !== 'All' || statusFilter !== 'All' || dateRange !== 'All') && (
+          {(searchTerm || categoryFilter !== 'All' || statusFilter !== 'All' || frequencyFilter !== 'All' || dateRange !== 'All') && (
             <button
               onClick={resetFilters}
               className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold py-2 px-3 hover:bg-emerald-500/10 rounded-xl transition-colors border border-emerald-500/20 flex items-center gap-1 cursor-pointer"
@@ -149,10 +158,10 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
         </div>
 
         {/* Multi-Filter Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Category filter */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Category</label>
+            <label className="text-[11px] font-bold text-slate-455 uppercase tracking-wider block">Category</label>
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
@@ -167,7 +176,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
 
           {/* Status filter */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Payment Status</label>
+            <label className="text-[11px] font-bold text-slate-455 uppercase tracking-wider block">Payment Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -179,9 +188,23 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
             </select>
           </div>
 
+          {/* Frequency filter */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-455 uppercase tracking-wider block">Billing Cycle</label>
+            <select
+              value={frequencyFilter}
+              onChange={(e) => setFrequencyFilter(e.target.value)}
+              className="w-full bg-slate-900/40 border border-slate-800 rounded-xl px-3 py-2 text-slate-355 text-xs focus:outline-none focus:border-emerald-500"
+            >
+              <option value="All">All Cycles</option>
+              <option value="Weekly">Weekly Only</option>
+              <option value="Monthly">Monthly Only</option>
+            </select>
+          </div>
+
           {/* Date range filter */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Period / Overdue</label>
+            <label className="text-[11px] font-bold text-slate-455 uppercase tracking-wider block">Period / Overdue</label>
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
@@ -196,7 +219,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
 
           {/* Sort selection */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Sort Bills</label>
+            <label className="text-[11px] font-bold text-slate-455 uppercase tracking-wider block">Sort Bills</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -251,6 +274,13 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
                       <span className="flex items-center gap-1">
                         <CreditCard size={12} className="text-slate-500" />
                         <span>Via: {bill.paymentMode}</span>
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
+                        (bill.frequency || 'Monthly') === 'Weekly'
+                          ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20'
+                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      }`}>
+                        {(bill.frequency || 'Monthly') === 'Weekly' ? 'Weekly' : 'Monthly'}
                       </span>
                     </div>
                   </div>
