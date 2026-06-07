@@ -112,6 +112,10 @@ export default function App() {
 
   // Listen to Auth State
   useEffect(() => {
+    if (!isConfigValid || !auth) {
+      setAuthLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
@@ -121,7 +125,7 @@ export default function App() {
 
   // Sync Budget from Firestore
   useEffect(() => {
-    if (!user) return;
+    if (!isConfigValid || !db || !user) return;
     const userDocRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -139,7 +143,7 @@ export default function App() {
 
   // Sync Bills from Firestore
   useEffect(() => {
-    if (!user) return;
+    if (!isConfigValid || !db || !user) return;
     const billsColRef = collection(db, 'users', user.uid, 'bills');
     const unsubscribe = onSnapshot(billsColRef, (querySnapshot) => {
       const billsList = [];
