@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import BillList from './components/BillList';
 import BillForm from './components/BillForm';
-import { LayoutDashboard, ReceiptText, Wallet, Calendar, LogOut, Loader2 } from 'lucide-react';
-import { auth, googleProvider, db } from './firebase';
+import { LayoutDashboard, ReceiptText, Wallet, Calendar, LogOut, Loader2, AlertTriangle } from 'lucide-react';
+import { auth, googleProvider, db, isConfigValid } from './firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, collection, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 
@@ -50,6 +50,50 @@ function SignInPage({ onSignIn, loading }) {
 
         <p className="text-[11px] text-slate-500">
           Secure, cloud-synchronized personal finance tracking.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ConfigErrorPage() {
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 selection:bg-indigo-500/30 selection:text-white relative overflow-hidden">
+      {/* Background gradients */}
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md glass-panel p-8 rounded-3xl shadow-2xl relative border border-slate-800/80 animate-zoom-in text-center space-y-6">
+        <div className="flex justify-center">
+          <span className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-rose-400 shadow-lg shadow-rose-500/5">
+            <AlertTriangle size={40} className="text-rose-400" />
+          </span>
+        </div>
+        
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white font-heading">
+            Configuration Required
+          </h1>
+          <p className="text-slate-400 mt-2 text-sm">
+            Firebase environment variables are missing or incorrect in your Vercel deployment settings.
+          </p>
+        </div>
+
+        <div className="text-left text-xs bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 text-slate-350">
+          <p className="font-semibold text-rose-350">How to fix this in Vercel:</p>
+          <ol className="list-decimal pl-4 space-y-1.5 text-slate-400">
+            <li>Go to your project dashboard on Vercel.</li>
+            <li>Select <strong>Settings &gt; Environment Variables</strong>.</li>
+            <li>Add the variables from your local `.env` file:
+              <code className="block mt-1 p-1 bg-slate-950 rounded text-slate-200 select-all font-mono text-[10px]">VITE_FIREBASE_API_KEY</code>
+              <code className="block mt-1 p-1 bg-slate-950 rounded text-slate-200 select-all font-mono text-[10px]">VITE_FIREBASE_PROJECT_ID</code>
+              etc.
+            </li>
+            <li>Trigger a new deployment or rebuild.</li>
+          </ol>
+        </div>
+
+        <p className="text-[11px] text-slate-500">
+          Once variables are added and app is redeployed, the login screen will load.
         </p>
       </div>
     </div>
@@ -204,6 +248,10 @@ export default function App() {
     .filter(b => b.status === 'Unpaid' && b.dueDate)
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const nextBill = upcomingBills.length > 0 ? upcomingBills[0] : null;
+
+  if (!isConfigValid) {
+    return <ConfigErrorPage />;
+  }
 
   if (authLoading) {
     return (

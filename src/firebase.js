@@ -11,11 +11,28 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const isConfigValid = 
+  import.meta.env.VITE_FIREBASE_API_KEY && 
+  import.meta.env.VITE_FIREBASE_API_KEY !== "AIzaSyDummyKey-ForLocalDevOnly" &&
+  import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+let app = null;
+let auth = null;
+let googleProvider = null;
+let db = null;
+
+if (isConfigValid) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+    db = getFirestore(app);
+  } catch (err) {
+    console.error("Firebase initialization failed:", err);
+  }
+} else {
+  console.warn("Firebase config is missing or invalid. Check environment variables.");
+}
+
+export { auth, googleProvider, db, isConfigValid };
 export default app;
