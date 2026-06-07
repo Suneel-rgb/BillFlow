@@ -184,7 +184,7 @@ export default function BillList({ bills, onToggleStatus, onEdit, onDelete }) {
                     </span>
                     <span className="flex items-center gap-1">
                       <IndianRupee size={13} className="text-slate-500" />
-                      <span>Via: {bill.paymentMethod || 'Credit Card'}</span>
+                      <span>Via: {bill.paymentMethod || 'Credit Card'} ({bill.frequency || 'One-time'})</span>
                     </span>
                   </div>
 

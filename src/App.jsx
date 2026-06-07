@@ -105,6 +105,8 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [bills, setBills] = useState([]);
   const [budget, setBudget] = useState(2500);
+  const [savingsBalance, setSavingsBalance] = useState(0);
+  const [savingsGoal, setSavingsGoal] = useState(1000);
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -123,7 +125,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Sync Budget from Firestore
+  // Sync Budget & Savings from Firestore
   useEffect(() => {
     if (!isConfigValid || !db || !user) return;
     const userDocRef = doc(db, 'users', user.uid);
@@ -133,9 +135,15 @@ export default function App() {
         if (data.budget !== undefined) {
           setBudget(data.budget);
         }
+        if (data.savingsBalance !== undefined) {
+          setSavingsBalance(data.savingsBalance);
+        }
+        if (data.savingsGoal !== undefined) {
+          setSavingsGoal(data.savingsGoal);
+        }
       } else {
-        // Initialize default budget in DB
-        setDoc(userDocRef, { budget: 2500 }, { merge: true });
+        // Initialize default fields in DB
+        setDoc(userDocRef, { budget: 2500, savingsBalance: 0, savingsGoal: 1000 }, { merge: true });
       }
     });
     return () => unsubscribe();
@@ -194,6 +202,7 @@ export default function App() {
         dueDate: formData.dueDate,
         status: formData.status,
         paymentMethod: formData.paymentMethod,
+        frequency: formData.frequency || 'One-time',
         notes: formData.notes
       }, { merge: true });
     } else {
@@ -206,6 +215,7 @@ export default function App() {
         dueDate: formData.dueDate,
         status: formData.status,
         paymentMethod: formData.paymentMethod,
+        frequency: formData.frequency || 'One-time',
         notes: formData.notes
       });
     }
@@ -244,6 +254,22 @@ export default function App() {
     if (user) {
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, { budget: newBudget }, { merge: true });
+    }
+  };
+
+  const handleSetSavingsBalance = async (newBalance) => {
+    setSavingsBalance(newBalance);
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, { savingsBalance: newBalance }, { merge: true });
+    }
+  };
+
+  const handleSetSavingsGoal = async (newGoal) => {
+    setSavingsGoal(newGoal);
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, { savingsGoal: newGoal }, { merge: true });
     }
   };
 
@@ -370,6 +396,10 @@ export default function App() {
               budget={budget} 
               setBudget={handleSetBudget} 
               onOpenAddModal={handleOpenAddModal} 
+              savingsBalance={savingsBalance}
+              setSavingsBalance={handleSetSavingsBalance}
+              savingsGoal={savingsGoal}
+              setSavingsGoal={handleSetSavingsGoal}
             />
           ) : (
             <div className="space-y-6">

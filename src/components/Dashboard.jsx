@@ -10,8 +10,16 @@ const CATEGORIES = {
   Other: { color: 'from-slate-400 to-slate-600', text: 'text-slate-400', bg: 'bg-slate-500/10' },
 };
 
-export default function Dashboard({ bills, budget, setBudget, onOpenAddModal }) {
-  const totalBillsCount = bills.length;
+export default function Dashboard({ 
+  bills, 
+  budget, 
+  setBudget, 
+  onOpenAddModal,
+  savingsBalance,
+  setSavingsBalance,
+  savingsGoal,
+  setSavingsGoal
+}) {
   const paidBills = bills.filter(b => b.status === 'Paid');
   const unpaidBills = bills.filter(b => b.status === 'Unpaid');
 
@@ -31,6 +39,24 @@ export default function Dashboard({ bills, budget, setBudget, onOpenAddModal }) 
 
   const maxSpentInCategory = Math.max(...Object.values(categorySpent), 1);
 
+  // Frequency breakdowns
+  const weeklyPaid = paidBills.filter(b => b.frequency === 'Weekly');
+  const weeklyUnpaid = unpaidBills.filter(b => b.frequency === 'Weekly');
+  const weeklySpentSum = weeklyPaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+  const weeklyPendingSum = weeklyUnpaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+
+  const monthlyPaid = paidBills.filter(b => b.frequency === 'Monthly');
+  const monthlyUnpaid = unpaidBills.filter(b => b.frequency === 'Monthly');
+  const monthlySpentSum = monthlyPaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+  const monthlyPendingSum = monthlyUnpaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+
+  const oneTimePaid = paidBills.filter(b => !b.frequency || b.frequency === 'One-time');
+  const oneTimeUnpaid = unpaidBills.filter(b => !b.frequency || b.frequency === 'One-time');
+  const oneTimeSpentSum = oneTimePaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+  const oneTimePendingSum = oneTimeUnpaid.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+
+  const savingsProgressPercent = savingsGoal > 0 ? Math.min(Math.round((savingsBalance / savingsGoal) * 100), 100) : 0;
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Top Welcome / Header */}
@@ -45,7 +71,7 @@ export default function Dashboard({ bills, budget, setBudget, onOpenAddModal }) 
         </div>
         <button
           onClick={onOpenAddModal}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-semibold shadow-lg shadow-teal-500/15 transition-all hover:-translate-y-0.5"
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-semibold shadow-lg shadow-teal-500/15 transition-all hover:-translate-y-0.5 cursor-pointer"
         >
           <Plus size={20} />
           <span>Add New Record</span>
@@ -111,6 +137,123 @@ export default function Dashboard({ bills, budget, setBudget, onOpenAddModal }) 
               />
             </div>
             <span className="block text-xs text-indigo-400/80 mt-1">Click value to edit budget</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Savings Goal Tracker */}
+      <div className="glass-card p-6 rounded-2xl relative border border-slate-800">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-4">
+          <div>
+            <h3 className="font-bold text-lg text-slate-200">Savings Goal Tracker</h3>
+            <p className="text-xs text-slate-400">Set a target savings goal and track your active progress</p>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Savings Balance</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400 text-xs font-bold">₹</span>
+                <input
+                  type="number"
+                  value={savingsBalance}
+                  onChange={(e) => setSavingsBalance(parseFloat(e.target.value) || 0)}
+                  className="w-28 bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-1.5 text-sm text-white font-bold focus:outline-none focus:border-teal-500"
+                  title="Click to change savings balance"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Savings Goal</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400 text-xs font-bold">₹</span>
+                <input
+                  type="number"
+                  value={savingsGoal}
+                  onChange={(e) => setSavingsGoal(parseFloat(e.target.value) || 0)}
+                  className="w-28 bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-1.5 text-sm text-white font-bold focus:outline-none focus:border-teal-500"
+                  title="Click to change savings goal"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        {savingsGoal > 0 ? (
+          <div>
+            <div className="flex justify-between items-center mb-1 text-xs">
+              <span className="text-teal-400 font-semibold">Progress: {savingsProgressPercent}%</span>
+              <span className="text-slate-400">₹{savingsBalance.toLocaleString()} / ₹{savingsGoal.toLocaleString()}</span>
+            </div>
+            <div className="w-full bg-slate-850 rounded-full h-3 overflow-hidden border border-slate-800/40">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-teal-400 to-indigo-500 transition-all duration-500"
+                style={{ width: `${savingsProgressPercent}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">Set a savings goal to begin tracking progress.</p>
+        )}
+      </div>
+
+      {/* Frequency Breakdown Summaries */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Payment Frequency Summaries</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Weekly card */}
+          <div className="glass-card p-5 rounded-2xl border border-slate-800/80">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-sm font-bold text-slate-200">Weekly Payments</span>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 uppercase border border-blue-500/20">Weekly</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Total Spent:</span>
+                <span className="font-semibold text-emerald-400">₹{weeklySpentSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Total Pending:</span>
+                <span className="font-semibold text-rose-400">₹{weeklyPendingSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly card */}
+          <div className="glass-card p-5 rounded-2xl border border-slate-800/80">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-sm font-bold text-slate-200">Monthly Payments</span>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 uppercase border border-indigo-500/20">Monthly</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Total Spent:</span>
+                <span className="font-semibold text-emerald-400">₹{monthlySpentSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Total Pending:</span>
+                <span className="font-semibold text-rose-400">₹{monthlyPendingSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* One-Time card */}
+          <div className="glass-card p-5 rounded-2xl border border-slate-800/80">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-sm font-bold text-slate-200">One-Time Payments</span>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 uppercase border border-teal-500/20">One-Time</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Total Spent:</span>
+                <span className="font-semibold text-emerald-400">₹{oneTimeSpentSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Total Pending:</span>
+                <span className="font-semibold text-rose-400">₹{oneTimePendingSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

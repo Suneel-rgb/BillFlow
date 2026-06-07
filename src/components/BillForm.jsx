@@ -12,6 +12,7 @@ export default function BillForm({ isOpen, onClose, onSubmit, editingBill }) {
     dueDate: '',
     status: 'Unpaid',
     paymentMethod: 'Credit Card',
+    frequency: 'One-time',
     notes: '',
   });
 
@@ -24,6 +25,7 @@ export default function BillForm({ isOpen, onClose, onSubmit, editingBill }) {
         dueDate: editingBill.dueDate || '',
         status: editingBill.status || 'Unpaid',
         paymentMethod: editingBill.paymentMethod || 'Credit Card',
+        frequency: editingBill.frequency || 'One-time',
         notes: editingBill.notes || '',
       });
     } else {
@@ -34,6 +36,7 @@ export default function BillForm({ isOpen, onClose, onSubmit, editingBill }) {
         dueDate: new Date().toISOString().split('T')[0],
         status: 'Unpaid',
         paymentMethod: 'Credit Card',
+        frequency: 'One-time',
         notes: '',
       });
     }
@@ -184,21 +187,39 @@ export default function BillForm({ isOpen, onClose, onSubmit, editingBill }) {
             </div>
           </div>
 
-          {/* Payment Method */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              Payment Method
-            </label>
-            <select
-              name="paymentMethod"
-              value={formData.paymentMethod}
-              onChange={handleChange}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm"
-            >
-              {METHODS.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+          {/* Payment Method & Frequency */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                Payment Method
+              </label>
+              <select
+                name="paymentMethod"
+                value={formData.paymentMethod}
+                onChange={handleChange}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm"
+              >
+                {METHODS.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                Frequency
+              </label>
+              <select
+                name="frequency"
+                value={formData.frequency}
+                onChange={handleChange}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm"
+              >
+                <option value="One-time">One-time</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+              </select>
+            </div>
           </div>
 
           {/* Notes */}
