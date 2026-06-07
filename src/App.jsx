@@ -189,35 +189,37 @@ export default function App() {
   const handleFormSubmit = async (formData) => {
     if (!user) return;
     
-    // Create reference to Firestore collection
-    const billsColRef = collection(db, 'users', user.uid, 'bills');
-
-    if (editingBill) {
-      // Update existing
-      const billDocRef = doc(db, 'users', user.uid, 'bills', formData.id.toString());
-      await setDoc(billDocRef, {
-        name: formData.name,
-        amount: formData.amount,
-        category: formData.category,
-        dueDate: formData.dueDate,
-        status: formData.status,
-        paymentMethod: formData.paymentMethod,
-        frequency: formData.frequency || 'One-time',
-        notes: formData.notes
-      }, { merge: true });
-    } else {
-      // Add new
-      const newDocRef = doc(collection(db, 'users', user.uid, 'bills'));
-      await setDoc(newDocRef, {
-        name: formData.name,
-        amount: formData.amount,
-        category: formData.category,
-        dueDate: formData.dueDate,
-        status: formData.status,
-        paymentMethod: formData.paymentMethod,
-        frequency: formData.frequency || 'One-time',
-        notes: formData.notes
-      });
+    try {
+      if (editingBill) {
+        // Update existing
+        const billDocRef = doc(db, 'users', user.uid, 'bills', formData.id.toString());
+        await setDoc(billDocRef, {
+          name: formData.name,
+          amount: formData.amount,
+          category: formData.category,
+          dueDate: formData.dueDate,
+          status: formData.status,
+          paymentMethod: formData.paymentMethod,
+          frequency: formData.frequency || 'One-time',
+          notes: formData.notes
+        }, { merge: true });
+      } else {
+        // Add new
+        const newDocRef = doc(collection(db, 'users', user.uid, 'bills'));
+        await setDoc(newDocRef, {
+          name: formData.name,
+          amount: formData.amount,
+          category: formData.category,
+          dueDate: formData.dueDate,
+          status: formData.status,
+          paymentMethod: formData.paymentMethod,
+          frequency: formData.frequency || 'One-time',
+          notes: formData.notes
+        });
+      }
+    } catch (err) {
+      console.error("Database write error:", err);
+      alert("Error saving record to Firestore: " + err.message + "\n\nMake sure your Cloud Firestore Database has been created and security rules permit writes.");
     }
     setEditingBill(null);
   };
@@ -226,8 +228,13 @@ export default function App() {
     if (!user) return;
     const bill = bills.find(b => b.id === id);
     if (bill) {
-      const billDocRef = doc(db, 'users', user.uid, 'bills', id.toString());
-      await setDoc(billDocRef, { status: bill.status === 'Paid' ? 'Unpaid' : 'Paid' }, { merge: true });
+      try {
+        const billDocRef = doc(db, 'users', user.uid, 'bills', id.toString());
+        await setDoc(billDocRef, { status: bill.status === 'Paid' ? 'Unpaid' : 'Paid' }, { merge: true });
+      } catch (err) {
+        console.error("Database update error:", err);
+        alert("Error updating record: " + err.message);
+      }
     }
   };
 
@@ -239,8 +246,13 @@ export default function App() {
   const handleDelete = async (id) => {
     if (!user) return;
     if (window.confirm('Are you sure you want to delete this record?')) {
-      const billDocRef = doc(db, 'users', user.uid, 'bills', id.toString());
-      await deleteDoc(billDocRef);
+      try {
+        const billDocRef = doc(db, 'users', user.uid, 'bills', id.toString());
+        await deleteDoc(billDocRef);
+      } catch (err) {
+        console.error("Database delete error:", err);
+        alert("Error deleting record: " + err.message);
+      }
     }
   };
 
@@ -252,16 +264,24 @@ export default function App() {
   const handleSetBudget = async (newBudget) => {
     setBudget(newBudget);
     if (user) {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { budget: newBudget }, { merge: true });
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, { budget: newBudget }, { merge: true });
+      } catch (err) {
+        console.error("Database update error:", err);
+      }
     }
   };
 
   const handleSetSavingsBalance = async (newBalance) => {
     setSavingsBalance(newBalance);
     if (user) {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { savingsBalance: newBalance }, { merge: true });
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, { savingsBalance: newBalance }, { merge: true });
+      } catch (err) {
+        console.error("Database update error:", err);
+      }
     }
   };
 
