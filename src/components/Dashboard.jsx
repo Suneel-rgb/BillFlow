@@ -7,6 +7,7 @@ const CATEGORIES = {
   Subscriptions: { color: 'from-amber-500 to-orange-600', text: 'text-amber-400', bg: 'bg-amber-500/10' },
   Food: { color: 'from-emerald-500 to-teal-600', text: 'text-emerald-400', bg: 'bg-emerald-500/10' },
   Leisure: { color: 'from-rose-500 to-red-600', text: 'text-rose-400', bg: 'bg-rose-500/10' },
+  Savings: { color: 'from-teal-400 to-emerald-500', text: 'text-teal-400', bg: 'bg-teal-500/10' },
   Other: { color: 'from-slate-400 to-slate-600', text: 'text-slate-400', bg: 'bg-slate-500/10' },
 };
 

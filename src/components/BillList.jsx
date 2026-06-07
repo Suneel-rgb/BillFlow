@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Edit2, Trash2, Calendar, IndianRupee, Filter, ArrowUpDown } from 'lucide-react';
 
-const CATEGORIES = ['Utilities', 'Rent', 'Subscriptions', 'Food', 'Leisure', 'Other'];
+const CATEGORIES = ['Utilities', 'Rent', 'Subscriptions', 'Food', 'Leisure', 'Other', 'Savings'];
 
 const CATEGORY_STYLES = {
   Utilities: 'bg-blue-500/10 text-blue-400 border border-blue-500/25',
@@ -9,6 +9,7 @@ const CATEGORY_STYLES = {
   Subscriptions: 'bg-amber-500/10 text-amber-400 border border-amber-500/25',
   Food: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25',
   Leisure: 'bg-rose-500/10 text-rose-400 border border-rose-500/25',
+  Savings: 'bg-teal-500/10 text-teal-400 border border-teal-500/25',
   Other: 'bg-slate-500/10 text-slate-400 border border-slate-550/25',
 };
 

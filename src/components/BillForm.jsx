@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
-const CATEGORIES = ['Utilities', 'Rent', 'Subscriptions', 'Food', 'Leisure', 'Other'];
+const CATEGORIES = ['Utilities', 'Rent', 'Subscriptions', 'Food', 'Leisure', 'Other', 'Savings'];
 const METHODS = ['Credit Card', 'Bank Transfer', 'Cash', 'Mobile Payment', 'Other'];
 
 export default function BillForm({ isOpen, onClose, onSubmit, editingBill }) {
