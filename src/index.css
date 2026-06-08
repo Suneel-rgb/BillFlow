@@ -42,3 +42,42 @@
 .theme-transition {
   transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease, text-shadow 0.35s ease;
 }
+
+/* Toast animations */
+@keyframes slide-in-up {
+  from {
+    transform: translateY(1.5rem) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-toast-in {
+  animation: slide-in-up 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Micro-animations and micro-interactions */
+.interactive-chip {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.interactive-chip:hover {
+  transform: translateY(-1.5px);
+}
+.interactive-chip:active {
+  transform: translateY(0.5px) scale(0.96);
+}
+
+/* Premium focus glows */
+.focus-glow-amber:focus {
+  box-shadow: 0 0 14px 1px rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.6) !important;
+}
+
+.focus-glow-emerald:focus {
+  box-shadow: 0 0 14px 1px rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.6) !important;
+}
+

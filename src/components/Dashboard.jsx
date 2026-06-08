@@ -224,6 +224,25 @@ export default function Dashboard({
                 })}
               </div>
 
+              {/* Quick Amount Presets */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">Presets:</span>
+                {[50, 80, 100, 150, 200].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setQuickAmount(amt.toString())}
+                    className={`px-2.5 py-1 text-[10px] font-extrabold rounded-lg border cursor-pointer interactive-chip ${
+                      quickAmount === amt.toString()
+                        ? 'bg-amber-500 text-slate-950 border-transparent shadow-sm'
+                        : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    ₹{amt}
+                  </button>
+                ))}
+              </div>
+
               {/* Fare Entry */}
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -236,7 +255,7 @@ export default function Dashboard({
                     placeholder="Enter ride fare amount (e.g. 120)"
                     value={quickAmount}
                     onChange={(e) => setQuickAmount(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-4 py-3.5 text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm font-bold"
+                    className="w-full bg-slate-900 border border-slate-850 rounded-xl pl-8 pr-4 py-3.5 text-white focus:outline-none focus-glow-amber text-sm font-bold transition-all"
                   />
                 </div>
                 <button

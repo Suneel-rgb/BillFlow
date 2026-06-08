@@ -289,8 +289,24 @@ export default function PersonalDashboard({
                       placeholder="e.g. 500"
                       value={quickAmount}
                       onChange={(e) => setQuickAmount(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-7 pr-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-bold placeholder-slate-650"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-7 pr-3 py-2.5 text-xs text-white focus:outline-none focus-glow-emerald font-bold placeholder-slate-650 transition-all"
                     />
+                  </div>
+                  <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                    {[150, 500, 1000, 2000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setQuickAmount(amt.toString())}
+                        className={`px-1.5 py-0.5 text-[9px] font-black rounded-md border cursor-pointer interactive-chip ${
+                          quickAmount === amt.toString()
+                            ? 'bg-emerald-500 text-slate-955 border-transparent'
+                            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        ₹{amt}
+                      </button>
+                    ))}
                   </div>
                 </div>
 

@@ -14,10 +14,63 @@ import PersonalAnalyticsTab from './components/PersonalAnalyticsTab';
 import BillFormModal from './components/BillFormModal';
 import PersonalExpenseFormModal from './components/PersonalExpenseFormModal';
 
-import { LayoutDashboard, ReceiptText, Fuel, BarChart3, LogOut, Loader2, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ReceiptText, Fuel, BarChart3, LogOut, Loader2, AlertTriangle, Volume2, VolumeX, CheckCircle, XCircle, Info } from 'lucide-react';
 import { auth, googleProvider, db, isConfigValid } from './firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, collection, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+
+function playChime(soundEnabled, type = 'success') {
+  if (!soundEnabled) return;
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'success') {
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc1.connect(gainNode);
+      osc2.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      osc1.type = 'sine';
+      osc2.type = 'triangle';
+      osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+      osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.35);
+      osc1.start();
+      osc2.start();
+      setTimeout(() => {
+        try {
+          const osc3 = audioCtx.createOscillator();
+          const gainNode2 = audioCtx.createGain();
+          osc3.connect(gainNode2);
+          gainNode2.connect(audioCtx.destination);
+          osc3.type = 'sine';
+          osc3.frequency.setValueAtTime(1174.66, audioCtx.currentTime);
+          gainNode2.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gainNode2.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.45);
+          osc3.start();
+          osc3.stop(audioCtx.currentTime + 0.5);
+        } catch (e) {}
+      }, 70);
+      osc1.stop(audioCtx.currentTime + 0.4);
+      osc2.stop(audioCtx.currentTime + 0.4);
+    } else if (type === 'delete') {
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(330, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(165, audioCtx.currentTime + 0.25);
+      gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+  } catch (e) {
+    console.warn("Audio Context blocked or unsupported:", e);
+  }
+}
 
 function SignInPage({ onSignIn, loading }) {
   return (
@@ -111,6 +164,33 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(() => {
     return !isConfigValid || !auth ? false : true;
   });
+
+  const [toast, setToast] = useState(null);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    return localStorage.getItem('rickshawflow_sound_enabled') !== 'false';
+  });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ id: Date.now(), message, type });
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 3200);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const toggleSound = () => {
+    setSoundEnabled(prev => {
+      const newVal = !prev;
+      localStorage.setItem('rickshawflow_sound_enabled', newVal.toString());
+      return newVal;
+    });
+    const nextVal = localStorage.getItem('rickshawflow_sound_enabled') !== 'false';
+    showToast(nextVal ? 'Chime sounds enabled 🔊' : 'Chime sounds muted 🔇', 'info');
+  };
   
   // Custom Auto states
   const [rides, setRides] = useState([]);
@@ -268,9 +348,11 @@ export default function App() {
         distance: formData.distance,
         notes: formData.notes
       });
+      playChime(soundEnabled, 'success');
+      showToast(editingRide ? 'Ride details updated successfully! 🛺' : 'Ride fare logged successfully! 🛺', 'success');
     } catch (err) {
       console.error("Database write error:", err);
-      alert("Error saving ride: " + err.message);
+      showToast("Error saving ride: " + err.message, "error");
     }
     setEditingRide(null);
   };
@@ -282,7 +364,6 @@ export default function App() {
     const commission = 0;
     const netAmount = amount;
 
-    // Smart default payment mode
     let paymentMode = 'Cash';
     if (platform === 'Uber' || platform === 'Ola' || platform === 'Rapido') {
       paymentMode = 'Platform Wallet';
@@ -302,9 +383,11 @@ export default function App() {
         distance: null,
         notes: 'Quick log drop-off'
       });
+      playChime(soundEnabled, 'success');
+      showToast(`Quick logged ₹${amount} for ${platform}! 🛺`, 'success');
     } catch (err) {
       console.error("Database write error:", err);
-      alert("Error quick logging ride: " + err.message);
+      showToast("Error quick logging ride: " + err.message, "error");
     }
   };
 
@@ -321,9 +404,11 @@ export default function App() {
         date: formData.date,
         notes: formData.notes
       });
+      playChime(soundEnabled, 'success');
+      showToast(editingExpense ? 'Auto expense details saved! 💸' : 'Auto expense logged! 💸', 'success');
     } catch (err) {
       console.error("Database write error:", err);
-      alert("Error saving expense: " + err.message);
+      showToast("Error saving expense: " + err.message, "error");
     }
     setEditingExpense(null);
   };
@@ -343,9 +428,11 @@ export default function App() {
         status: formData.status,
         frequency: formData.frequency || 'Monthly'
       });
+      playChime(soundEnabled, 'success');
+      showToast(editingBill ? 'Utility bill updated! 💵' : 'New utility bill logged! 💵', 'success');
     } catch (err) {
       console.error("Database write error:", err);
-      alert("Error saving bill: " + err.message);
+      showToast("Error saving bill: " + err.message, "error");
     }
     setEditingBill(null);
   };
@@ -363,9 +450,11 @@ export default function App() {
         paymentMode: formData.paymentMode,
         notes: formData.notes
       });
+      playChime(soundEnabled, 'success');
+      showToast(editingPersonalExpense ? 'Spend details updated! 💸' : 'Personal spend logged! 💸', 'success');
     } catch (err) {
       console.error("Database write error:", err);
-      alert("Error saving personal expense: " + err.message);
+      showToast("Error saving personal expense: " + err.message, "error");
     }
     setEditingPersonalExpense(null);
   };
@@ -384,9 +473,11 @@ export default function App() {
         status: 'Unpaid',
         frequency
       });
+      playChime(soundEnabled, 'success');
+      showToast(`Quick logged bill: ${title} (₹${amount})! 💵`, 'success');
     } catch (err) {
       console.error("Database write error:", err);
-      alert("Error quick logging bill: " + err.message);
+      showToast("Error quick logging bill: " + err.message, "error");
     }
   };
 
@@ -397,36 +488,30 @@ export default function App() {
     if (!bill) return;
     try {
       const billDocRef = doc(db, 'users', user.uid, 'personal_bills', id.toString());
+      const newStatus = bill.status === 'Paid' ? 'Unpaid' : 'Paid';
       await setDoc(billDocRef, {
-        status: bill.status === 'Paid' ? 'Unpaid' : 'Paid'
+        status: newStatus
       }, { merge: true });
+      playChime(soundEnabled, 'success');
+      showToast(`Bill marked as ${newStatus === 'Paid' ? 'Paid (Cleared! 🎉)' : 'Unpaid ❌'}`, 'success');
     } catch (err) {
       console.error("Database update error:", err);
+      showToast("Error updating bill status: " + err.message, "error");
     }
   };
 
   // 8. Delete Bill
   const handleDeleteBill = async (id) => {
     if (!user) return;
-    try {
-      const billDocRef = doc(db, 'users', user.uid, 'personal_bills', id.toString());
-      await deleteDoc(billDocRef);
-    } catch (err) {
-      console.error("Database delete error:", err);
-      alert("Error deleting bill: " + err.message);
-    }
+    const billDocRef = doc(db, 'users', user.uid, 'personal_bills', id.toString());
+    await deleteDoc(billDocRef);
   };
 
   // 9. Delete Personal Expense
   const handleDeletePersonalExpense = async (id) => {
     if (!user) return;
-    try {
-      const expenseDocRef = doc(db, 'users', user.uid, 'personal_expenses', id.toString());
-      await deleteDoc(expenseDocRef);
-    } catch (err) {
-      console.error("Database delete error:", err);
-      alert("Error deleting expense: " + err.message);
-    }
+    const expenseDocRef = doc(db, 'users', user.uid, 'personal_expenses', id.toString());
+    await deleteDoc(expenseDocRef);
   };
 
   // Initiators for forms
@@ -453,24 +538,14 @@ export default function App() {
   // Deletions
   const handleDeleteRide = async (id) => {
     if (!user) return;
-    try {
-      const rideDocRef = doc(db, 'users', user.uid, 'rides', id.toString());
-      await deleteDoc(rideDocRef);
-    } catch (err) {
-      console.error("Database delete error:", err);
-      alert("Error deleting ride: " + err.message);
-    }
+    const rideDocRef = doc(db, 'users', user.uid, 'rides', id.toString());
+    await deleteDoc(rideDocRef);
   };
 
   const handleDeleteExpense = async (id) => {
     if (!user) return;
-    try {
-      const expenseDocRef = doc(db, 'users', user.uid, 'expenses', id.toString());
-      await deleteDoc(expenseDocRef);
-    } catch (err) {
-      console.error("Database delete error:", err);
-      alert("Error deleting expense: " + err.message);
-    }
+    const expenseDocRef = doc(db, 'users', user.uid, 'expenses', id.toString());
+    await deleteDoc(expenseDocRef);
   };
 
   const handleDeleteRideInitiate = (id) => {
@@ -500,14 +575,21 @@ export default function App() {
   const handleConfirmDelete = async () => {
     if (!deleteConfirm) return;
     const { type, id } = deleteConfirm;
-    if (type === 'ride') {
-      await handleDeleteRide(id);
-    } else if (type === 'expense') {
-      await handleDeleteExpense(id);
-    } else if (type === 'personal_bill') {
-      await handleDeleteBill(id);
-    } else if (type === 'personal_expense') {
-      await handleDeletePersonalExpense(id);
+    try {
+      if (type === 'ride') {
+        await handleDeleteRide(id);
+      } else if (type === 'expense') {
+        await handleDeleteExpense(id);
+      } else if (type === 'personal_bill') {
+        await handleDeleteBill(id);
+      } else if (type === 'personal_expense') {
+        await handleDeletePersonalExpense(id);
+      }
+      playChime(soundEnabled, 'delete');
+      showToast(`${deleteConfirm.label} deleted successfully.`, 'info');
+    } catch (err) {
+      console.error("Delete error:", err);
+      showToast("Error deleting: " + err.message, "error");
     }
     setDeleteConfirm(null);
   };
@@ -622,6 +704,17 @@ export default function App() {
                 <span className="block text-xs font-bold text-slate-200 leading-none">{user.displayName}</span>
                 <span className="text-[10px] text-slate-550 mt-0.5 block">{user.email}</span>
               </div>
+              <button
+                onClick={toggleSound}
+                className={`p-2.5 rounded-xl transition-all border border-transparent cursor-pointer ${
+                  soundEnabled 
+                    ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 hover:border-amber-500/20' 
+                    : 'text-slate-500 hover:text-slate-400 hover:bg-slate-800/50 hover:border-slate-700/20'
+                }`}
+                title={soundEnabled ? "Mute chimes" : "Enable chimes"}
+              >
+                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              </button>
               <button
                 onClick={handleSignOut}
                 className="p-2.5 rounded-xl text-slate-405 hover:text-rose-450 hover:bg-rose-500/10 transition-all border border-transparent hover:border-rose-500/20 cursor-pointer"
@@ -1005,6 +1098,32 @@ export default function App() {
           <p>© {new Date().getFullYear()} RickshawFlow. Built with React & Tailwind CSS.</p>
         </div>
       </footer>
+
+      {/* Floating Toast Notification Box */}
+      {toast && (
+        <div className="fixed bottom-20 md:bottom-6 right-0 left-0 md:left-auto md:right-6 flex justify-center md:justify-end z-50 px-4 animate-toast-in pointer-events-none">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border backdrop-blur-md text-xs font-bold text-slate-105 pointer-events-auto ${
+            toast.type === 'success' 
+              ? 'bg-emerald-950/90 border-emerald-500/35 shadow-emerald-500/5' 
+              : toast.type === 'error'
+              ? 'bg-rose-955/90 border-rose-500/35 shadow-rose-500/5'
+              : 'bg-slate-900/90 border-slate-700/40 shadow-black/20'
+          }`}>
+            <span>
+              {toast.type === 'success' && <CheckCircle size={15} className="text-emerald-400" />}
+              {toast.type === 'error' && <XCircle size={15} className="text-rose-450" />}
+              {toast.type === 'info' && <Info size={15} className="text-amber-400" />}
+            </span>
+            <span>{toast.message}</span>
+            <button 
+              onClick={() => setToast(null)} 
+              className="ml-2 hover:text-white text-slate-400 p-0.5 rounded cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
