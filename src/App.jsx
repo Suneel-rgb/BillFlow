@@ -202,6 +202,7 @@ export default function App() {
   const [personalBudget, setPersonalBudget] = useState(20000);
   const [bills, setBills] = useState([]);
   const [personalExpenses, setPersonalExpenses] = useState([]);
+  const [dailyMilestones, setDailyMilestones] = useState([]);
 
   // Modal Controls
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -252,6 +253,39 @@ export default function App() {
     });
     return () => unsubscribe();
   }, [user]);
+
+  // Sync Daily Milestones from Firestore
+  useEffect(() => {
+    if (!isConfigValid || !db || !user) return;
+    const milestonesColRef = collection(db, 'users', user.uid, 'daily_milestones');
+    const unsubscribe = onSnapshot(milestonesColRef, (querySnapshot) => {
+      const milestonesList = [];
+      querySnapshot.forEach((doc) => {
+        milestonesList.push({ id: doc.id, ...doc.data() });
+      });
+      setDailyMilestones(milestonesList);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Save Daily Milestone (Odometer readings)
+  const handleSaveDailyMilestone = async (date, startOdo, endOdo) => {
+    if (!user) return;
+    try {
+      const docId = date.toString();
+      const milestoneDocRef = doc(db, 'users', user.uid, 'daily_milestones', docId);
+      await setDoc(milestoneDocRef, {
+        date,
+        startOdo: startOdo !== '' ? parseFloat(startOdo) : null,
+        endOdo: endOdo !== '' ? parseFloat(endOdo) : null
+      });
+      playChime(soundEnabled, 'success');
+      showToast("Daily odometer readings saved! 🛺", 'success');
+    } catch (err) {
+      console.error("Database write error:", err);
+      showToast("Error saving odometer: " + err.message, "error");
+    }
+  };
 
   // Sync Rides from Firestore
   useEffect(() => {
@@ -832,6 +866,8 @@ export default function App() {
                     setIsExpenseModalOpen(true);
                   }}
                   setActiveTab={setActiveTab}
+                  dailyMilestones={dailyMilestones}
+                  onSaveDailyMilestone={handleSaveDailyMilestone}
                 />
               )}
 

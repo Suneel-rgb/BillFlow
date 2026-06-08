@@ -17,13 +17,52 @@ export default function Dashboard({
   onQuickRideSubmit,
   onOpenAddRideModal,
   onOpenAddExpenseModal,
-  setActiveTab
+  setActiveTab,
+  dailyMilestones = [],
+  onSaveDailyMilestone
 }) {
   const [quickAmount, setQuickAmount] = useState('');
   const [quickPlatform, setQuickPlatform] = useState('Local');
 
-  // Filter today's items
   const todayStr = new Date().toISOString().split('T')[0];
+
+  // Filter today's milestone odometer record
+  const todayMilestone = dailyMilestones.find(m => m.date === todayStr) || { startOdo: '', endOdo: '' };
+  
+  // Local state for odometer inputs
+  const [startOdo, setStartOdo] = useState(todayMilestone.startOdo ? todayMilestone.startOdo.toString() : '');
+  const [endOdo, setEndOdo] = useState(todayMilestone.endOdo ? todayMilestone.endOdo.toString() : '');
+
+  // Keep state in sync when database changes
+  const [lastSyncedDate, setLastSyncedDate] = useState('');
+  if (lastSyncedDate !== todayStr + '-' + todayMilestone.startOdo + '-' + todayMilestone.endOdo) {
+    setStartOdo(todayMilestone.startOdo ? todayMilestone.startOdo.toString() : '');
+    setEndOdo(todayMilestone.endOdo ? todayMilestone.endOdo.toString() : '');
+    setLastSyncedDate(todayStr + '-' + todayMilestone.startOdo + '-' + todayMilestone.endOdo);
+  }
+
+  const handleOdoSave = (e) => {
+    e.preventDefault();
+    if (startOdo !== '' && endOdo !== '') {
+      const start = parseFloat(startOdo);
+      const end = parseFloat(endOdo);
+      if (end < start) {
+        alert("Ending odometer reading cannot be less than starting reading!");
+        return;
+      }
+    }
+    onSaveDailyMilestone(todayStr, startOdo, endOdo);
+  };
+
+  const startNum = parseFloat(startOdo);
+  const endNum = parseFloat(endOdo);
+  const dailyDistance = (isNaN(startNum) || isNaN(endNum)) ? 0 : Math.max(endNum - startNum, 0);
+
+  const earningsPerKm = dailyDistance > 0 ? (todayGross / dailyDistance) : 0;
+  const fuelCostPerKm = dailyDistance > 0 ? (todayFuel / dailyDistance) : 0;
+  const profitPerKm = dailyDistance > 0 ? (netProfitToday / dailyDistance) : 0;
+
+  // Filter today's items
   const todayRides = rides.filter(r => r.date === todayStr);
   const todayExpenses = expenses.filter(e => e.date === todayStr);
 
@@ -112,6 +151,91 @@ export default function Dashboard({
           <span className="text-xl sm:text-2xl font-black text-slate-100 mt-2 block">₹{netProfitToday.toLocaleString()}</span>
           <span className="text-[9px] text-slate-550 block mt-0.5">Earnings minus expenses</span>
         </div>
+      </div>
+
+      {/* Daily Odometer & Mileage Efficiency */}
+      <div className="glass-card p-6 rounded-2xl border border-slate-850 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-base text-slate-100 flex items-center gap-2">
+              <span>🛞</span>
+              <span>Daily Odometer & Vehicle Mileage</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Enter starting and ending odometer values to calculate today's earnings and fuel cost per kilometer.
+            </p>
+          </div>
+          
+          <form onSubmit={handleOdoSave} className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Start Odometer (km)</label>
+              <input
+                type="number"
+                step="0.1"
+                placeholder="e.g. 12050"
+                value={startOdo}
+                onChange={(e) => setStartOdo(e.target.value)}
+                className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus-glow-amber w-32 placeholder-slate-650"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">End Odometer (km)</label>
+              <input
+                type="number"
+                step="0.1"
+                placeholder="e.g. 12180"
+                value={endOdo}
+                onChange={(e) => setEndOdo(e.target.value)}
+                className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus-glow-amber w-32 placeholder-slate-650"
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-450 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/10 transition-all cursor-pointer interactive-chip"
+            >
+              Save KM
+            </button>
+          </form>
+        </div>
+
+        {/* Live Metrics Row when Odometer is filled */}
+        {dailyDistance > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-900 animate-fade-in">
+            {/* Distance driven */}
+            <div className="bg-slate-900/40 p-4 rounded-xl border border-slate-800/80 flex flex-col justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Today's Run</span>
+              <span className="text-lg font-extrabold text-amber-400 mt-1 block">{dailyDistance.toFixed(1)} km</span>
+              <span className="text-[9px] text-slate-500 block mt-0.5">Kilometers completed</span>
+            </div>
+
+            {/* Earnings per KM */}
+            <div className="bg-slate-900/40 p-4 rounded-xl border border-slate-800/80 flex flex-col justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">Earnings / KM</span>
+              <span className="text-lg font-extrabold text-slate-200 mt-1 block">₹{earningsPerKm.toFixed(1)} <span className="text-[10px] font-medium text-slate-450">/ km</span></span>
+              <span className="text-[9px] text-slate-550 block mt-0.5">Gross fare per km</span>
+            </div>
+
+            {/* Fuel CNG cost per KM */}
+            <div className="bg-slate-900/40 p-4 rounded-xl border border-slate-800/80 flex flex-col justify-between">
+              <span className="text-[10px] font-bold text-rose-455 uppercase tracking-wider block font-heading">CNG Fuel Cost / KM</span>
+              <span className="text-lg font-extrabold text-rose-400 mt-1 block">₹{fuelCostPerKm.toFixed(1)} <span className="text-[10px] font-medium text-slate-450">/ km</span></span>
+              <span className="text-[9px] text-slate-550 block mt-0.5">CNG overhead per km</span>
+            </div>
+
+            {/* Net Profit per KM */}
+            <div className="bg-slate-900/40 p-4 rounded-xl border border-slate-800/80 flex flex-col justify-between">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block font-heading">Profit / KM</span>
+              <span className="text-lg font-extrabold text-emerald-450 mt-1 block">₹{profitPerKm.toFixed(1)} <span className="text-[10px] font-medium text-slate-450">/ km</span></span>
+              <span className="text-[9px] text-emerald-555 block mt-0.5 font-semibold">Net take-home margin</span>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 bg-slate-900/20 border border-slate-850 rounded-xl text-center text-xs text-slate-500">
+            ℹ️ Log starting and ending odometer values above to calculate dynamic efficiency indicators (e.g. ₹/KM rate).
+          </div>
+        )}
       </div>
 
       {/* Target Progress Wheel & Quick logging columns */}
