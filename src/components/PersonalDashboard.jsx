@@ -326,7 +326,7 @@ export default function PersonalDashboard({
             <div className="flex justify-between items-center mb-5">
               <h3 className="font-bold text-base text-slate-200">Upcoming Pending Bills</h3>
               <button
-                onClick={() => setActiveTab('bills')}
+                onClick={() => setActiveTab('rides')}
                 className="text-xs text-emerald-400 hover:text-emerald-350 font-semibold flex items-center gap-0.5 cursor-pointer"
               >
                 <span>View All</span>

@@ -118,7 +118,7 @@ export default function Dashboard({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Radial Target Progress block */}
-        <div className="glass-card p-6 rounded-2xl border border-slate-850 flex flex-col justify-between items-center text-center">
+        <div className="glass-card p-6 rounded-2xl border border-slate-850 flex flex-col justify-between items-center text-center order-2 lg:order-1">
           <div className="w-full text-left flex justify-between items-center">
             <div>
               <h3 className="font-bold text-base text-slate-200">Daily Target</h3>
@@ -193,7 +193,7 @@ export default function Dashboard({
         </div>
 
         {/* High Speed Quick Logging Panel */}
-        <div className="lg:col-span-2 glass-card p-6 rounded-2xl border border-slate-850 flex flex-col justify-between">
+        <div className="lg:col-span-2 glass-card p-6 rounded-2xl border border-slate-850 flex flex-col justify-between order-1 lg:order-2">
           <div>
             <h3 className="font-bold text-base text-slate-200 mb-2 flex items-center gap-1.5">
               <Smartphone size={16} className="text-amber-550" />

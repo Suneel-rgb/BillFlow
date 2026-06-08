@@ -635,10 +635,10 @@ export default function App() {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 md:py-8 flex flex-col md:flex-row gap-8">
         
         {/* Navigation Sidebar */}
-        <aside className="w-full md:w-64 flex-shrink-0">
+        <aside className="hidden md:block w-full md:w-64 flex-shrink-0">
           <div className="glass-panel p-4 rounded-3xl md:sticky md:top-24 space-y-1.5 border border-slate-800/60 shadow-lg shadow-black/20">
             {/* Tab 1: Dashboard */}
             <button
@@ -829,6 +829,87 @@ export default function App() {
           )}
         </section>
       </main>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/80 backdrop-blur-lg border-t border-slate-900/80 flex justify-around items-center py-2 px-3 pb-safe-bottom theme-transition">
+        {/* Tab 1: Dashboard */}
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'dashboard'
+              ? `${appMode === 'rickshaw' ? 'text-amber-400' : 'text-emerald-400'}`
+              : 'text-slate-500 hover:text-slate-400'
+          }`}
+        >
+          <LayoutDashboard size={20} />
+          <span className="text-[9px] font-bold tracking-wider uppercase">Dashboard</span>
+        </button>
+
+        {/* Tab 2: Rides / Bills */}
+        <button
+          onClick={() => setActiveTab('rides')}
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer relative ${
+            activeTab === 'rides'
+              ? `${appMode === 'rickshaw' ? 'text-amber-400' : 'text-emerald-400'}`
+              : 'text-slate-500 hover:text-slate-400'
+          }`}
+        >
+          <div className="relative">
+            <ReceiptText size={20} />
+            {(appMode === 'rickshaw' ? rides.length : bills.length) > 0 && (
+              <span className={`absolute -top-1.5 -right-2.5 text-[8px] font-black py-0.5 px-1.5 rounded-full ${
+                activeTab === 'rides'
+                  ? `${appMode === 'rickshaw' ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950'}`
+                  : 'bg-slate-900 text-slate-400 border border-slate-800'
+              }`}>
+                {appMode === 'rickshaw' ? rides.length : bills.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold tracking-wider uppercase">
+            {appMode === 'rickshaw' ? 'Rides' : 'Bills'}
+          </span>
+        </button>
+
+        {/* Tab 3: Expenses / Spends */}
+        <button
+          onClick={() => setActiveTab('expenses')}
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer relative ${
+            activeTab === 'expenses'
+              ? `${appMode === 'rickshaw' ? 'text-amber-400' : 'text-emerald-400'}`
+              : 'text-slate-500 hover:text-slate-400'
+          }`}
+        >
+          <div className="relative">
+            <Fuel size={20} />
+            {(appMode === 'rickshaw' ? expenses.length : personalExpenses.length) > 0 && (
+              <span className={`absolute -top-1.5 -right-2.5 text-[8px] font-black py-0.5 px-1.5 rounded-full ${
+                activeTab === 'expenses'
+                  ? `${appMode === 'rickshaw' ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950'}`
+                  : 'bg-slate-900 text-slate-400 border border-slate-800'
+              }`}>
+                {appMode === 'rickshaw' ? expenses.length : personalExpenses.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold tracking-wider uppercase">
+            {appMode === 'rickshaw' ? 'Expenses' : 'Spends'}
+          </span>
+        </button>
+
+        {/* Tab 4: Analytics */}
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'analytics'
+              ? `${appMode === 'rickshaw' ? 'text-amber-400' : 'text-emerald-400'}`
+              : 'text-slate-500 hover:text-slate-400'
+          }`}
+        >
+          <BarChart3 size={20} />
+          <span className="text-[9px] font-bold tracking-wider uppercase">Analytics</span>
+        </button>
+      </nav>
 
       {/* Ride Modal */}
       <RideFormModal 
