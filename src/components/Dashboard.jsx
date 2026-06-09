@@ -54,14 +54,6 @@ export default function Dashboard({
     onSaveDailyMilestone(todayStr, startOdo, endOdo);
   };
 
-  const startNum = parseFloat(startOdo);
-  const endNum = parseFloat(endOdo);
-  const dailyDistance = (isNaN(startNum) || isNaN(endNum)) ? 0 : Math.max(endNum - startNum, 0);
-
-  const earningsPerKm = dailyDistance > 0 ? (todayGross / dailyDistance) : 0;
-  const fuelCostPerKm = dailyDistance > 0 ? (todayFuel / dailyDistance) : 0;
-  const profitPerKm = dailyDistance > 0 ? (netProfitToday / dailyDistance) : 0;
-
   // Filter today's items
   const todayRides = rides.filter(r => r.date === todayStr);
   const todayExpenses = expenses.filter(e => e.date === todayStr);
@@ -76,6 +68,14 @@ export default function Dashboard({
   const todayAllExpenses = todayExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
 
   const netProfitToday = todayNetEarnings - todayAllExpenses;
+
+  const startNum = parseFloat(startOdo);
+  const endNum = parseFloat(endOdo);
+  const dailyDistance = (isNaN(startNum) || isNaN(endNum)) ? 0 : Math.max(endNum - startNum, 0);
+
+  const earningsPerKm = dailyDistance > 0 ? (todayGross / dailyDistance) : 0;
+  const fuelCostPerKm = dailyDistance > 0 ? (todayFuel / dailyDistance) : 0;
+  const profitPerKm = dailyDistance > 0 ? (netProfitToday / dailyDistance) : 0;
 
   // Daily target progress calculations
   const targetProgress = dailyTarget > 0 ? Math.min(Math.round((todayNetEarnings / dailyTarget) * 100), 100) : 0;
