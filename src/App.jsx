@@ -380,7 +380,8 @@ export default function App() {
         paymentMode: formData.paymentMode,
         date: formData.date,
         distance: formData.distance,
-        notes: formData.notes
+        notes: formData.notes,
+        createdAt: editingRide?.createdAt || Date.now()
       });
       playChime(soundEnabled, 'success');
       showToast(editingRide ? 'Ride details updated successfully! 🛺' : 'Ride fare logged successfully! 🛺', 'success');
@@ -400,7 +401,7 @@ export default function App() {
 
     let paymentMode = 'Cash';
     if (platform === 'Uber' || platform === 'Ola' || platform === 'Rapido') {
-      paymentMode = 'Platform Wallet';
+      paymentMode = 'UPI / Online';
     } else if (platform === 'Namma Yatri') {
       paymentMode = 'UPI / Online';
     }
@@ -415,7 +416,8 @@ export default function App() {
         paymentMode,
         date: new Date().toISOString().split('T')[0],
         distance: null,
-        notes: 'Quick log drop-off'
+        notes: 'Quick log drop-off',
+        createdAt: Date.now()
       });
       playChime(soundEnabled, 'success');
       showToast(`Quick logged ₹${amount} for ${platform}! 🛺`, 'success');
@@ -702,25 +704,27 @@ export default function App() {
             <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-[10px] sm:text-xs font-bold leading-none select-none">
               <button
                 onClick={() => handleSetAppMode('rickshaw')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-3 sm:py-2 rounded-lg transition-all cursor-pointer ${
                   appMode === 'rickshaw' 
                     ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10 font-bold' 
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <span>🛺</span>
-                <span className="hidden md:inline">RickshawFlow</span>
+                <span className="hidden sm:inline">RickshawFlow</span>
+                <span className="inline sm:hidden">Auto</span>
               </button>
               <button
                 onClick={() => handleSetAppMode('personal')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-3 sm:py-2 rounded-lg transition-all cursor-pointer ${
                   appMode === 'personal' 
-                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10 font-bold' 
+                    ? 'bg-emerald-500 text-slate-955 shadow-md shadow-emerald-500/10 font-bold' 
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <span>💵</span>
-                <span className="hidden md:inline">Bill Tracker</span>
+                <span className="hidden sm:inline">Bill Tracker</span>
+                <span className="inline sm:hidden">Personal</span>
               </button>
             </div>
 
@@ -960,7 +964,7 @@ export default function App() {
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/80 backdrop-blur-lg border-t border-slate-900/80 flex justify-around items-center py-2 px-3 pb-safe-bottom theme-transition">
+      <nav className={`md:hidden fixed bottom-4 left-4 right-4 max-w-md mx-auto z-40 bg-slate-900/90 backdrop-blur-xl border ${appMode === 'rickshaw' ? 'border-amber-550/20' : 'border-emerald-500/20'} shadow-2xl rounded-2xl flex justify-around items-center py-2.5 px-3 theme-transition`}>
         {/* Tab 1: Dashboard */}
         <button
           onClick={() => setActiveTab('dashboard')}

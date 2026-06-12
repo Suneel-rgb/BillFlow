@@ -20,6 +20,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
   const [frequencyFilter, setFrequencyFilter] = useState('All');
   const [dateRange, setDateRange] = useState('All');
   const [sortBy, setSortBy] = useState('date-asc'); // default: oldest/nearest first for due bills
+  const [showFilters, setShowFilters] = useState(false);
 
   // Filtering Logic
   const filteredBills = bills.filter(bill => {
@@ -83,6 +84,13 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
     setSortBy('date-asc');
   };
 
+  const activeFiltersCount = 
+    (categoryFilter !== 'All' ? 1 : 0) + 
+    (statusFilter !== 'All' ? 1 : 0) + 
+    (frequencyFilter !== 'All' ? 1 : 0) + 
+    (dateRange !== 'All' ? 1 : 0) + 
+    (sortBy !== 'date-asc' ? 1 : 0);
+
   return (
     <div className="space-y-6 animate-fade-in text-emerald-100">
       {/* Top Welcome / Header */}
@@ -108,7 +116,7 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-card p-4 rounded-2xl border border-emerald-500/10">
           <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block font-heading">Monthly Bills Total</span>
-          <span className="text-xl font-black text-emerald-450 mt-1 block">₹{monthlyAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+          <span className="text-xl font-black text-emerald-455 mt-1 block">₹{monthlyAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
           <span className="text-[9px] text-slate-500 block mt-0.5">{filteredBills.filter(b => (b.frequency || 'Monthly') === 'Monthly').length} monthly bills</span>
         </div>
         <div className="glass-card p-4 rounded-2xl border border-slate-800">
@@ -145,20 +153,36 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
             />
           </div>
 
-          {/* Quick Clear Filter Button */}
-          {(searchTerm || categoryFilter !== 'All' || statusFilter !== 'All' || frequencyFilter !== 'All' || dateRange !== 'All') && (
+          <div className="flex gap-2 w-full md:w-auto">
+            {/* Mobile Filters Toggle Button */}
             <button
-              onClick={resetFilters}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold py-2 px-3 hover:bg-emerald-500/10 rounded-xl transition-colors border border-emerald-500/20 flex items-center gap-1 cursor-pointer"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex-1 md:hidden flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 border border-slate-800 text-slate-305 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
-              <RefreshCw size={12} />
-              <span>Reset Filters</span>
+              <span>⚙️</span>
+              <span>{showFilters ? 'Hide Filters' : 'Filters & Sort'}</span>
+              {activeFiltersCount > 0 && (
+                <span className="bg-emerald-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                  {activeFiltersCount}
+                </span>
+              )}
             </button>
-          )}
+
+            {/* Quick Clear Filter Button */}
+            {(searchTerm || categoryFilter !== 'All' || statusFilter !== 'All' || frequencyFilter !== 'All' || dateRange !== 'All' || sortBy !== 'date-asc') && (
+              <button
+                onClick={resetFilters}
+                className="text-xs text-emerald-450 hover:text-emerald-400 font-semibold py-2.5 px-3 hover:bg-emerald-500/10 rounded-xl transition-colors border border-emerald-500/20 flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <RefreshCw size={12} />
+                <span className="hidden sm:inline">Reset Filters</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Multi-Filter Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className={`${showFilters ? 'grid' : 'hidden md:grid'} grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-3 border-t border-slate-900/60 md:border-t-0 md:pt-0`}>
           {/* Category filter */}
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-455 uppercase tracking-wider block">Category</label>
@@ -295,10 +319,10 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
                     </span>
                     <button
                       onClick={() => onToggleStatus(bill.id)}
-                      className={`text-[9px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider border cursor-pointer ${
+                      className={`text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider border cursor-pointer ${
                         bill.status === 'Paid'
-                          ? 'bg-emerald-500/20 text-emerald-450 border-emerald-500/30'
-                          : 'bg-rose-500/20 text-rose-455 border-rose-500/30'
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/35'
+                          : 'bg-rose-500/20 text-rose-455 border-rose-500/35'
                       }`}
                       title="Toggle payment status"
                     >
@@ -307,20 +331,20 @@ export default function BillsTab({ bills, onAddBillClick, onEdit, onDelete, onTo
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1.5 pl-4 border-l border-slate-900">
+                  <div className="flex items-center gap-2 pl-4 border-l border-slate-900">
                     <button
                       onClick={() => onEdit(bill)}
-                      className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700/50 transition-all cursor-pointer"
+                      className="p-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700/50 transition-all cursor-pointer"
                       title="Edit Bill"
                     >
-                      <Edit2 size={14} />
+                      <Edit2 size={18} />
                     </button>
                     <button
                       onClick={() => onDelete(bill.id)}
-                      className="p-2.5 rounded-xl text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
+                      className="p-3 rounded-xl text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
                       title="Delete Bill"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </div>

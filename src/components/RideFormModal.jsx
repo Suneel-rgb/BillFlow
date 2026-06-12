@@ -10,7 +10,7 @@ const PLATFORMS = [
   { id: 'Other', name: 'Other App', color: 'bg-indigo-650 text-white border-indigo-600 hover:bg-indigo-550' }
 ];
 
-const PAYMENT_MODES = ['UPI / Online', 'Cash', 'Platform Wallet'];
+const PAYMENT_MODES = ['UPI / Online', 'Cash'];
 
 export default function RideFormModal({ isOpen, onClose, onSubmit, editingRide }) {
   // Initialize state once during mount
@@ -47,7 +47,7 @@ export default function RideFormModal({ isOpen, onClose, onSubmit, editingRide }
       if (platformId === 'Local') {
         defaultPayment = 'Cash';
       } else if (platformId === 'Uber' || platformId === 'Ola' || platformId === 'Rapido') {
-        defaultPayment = 'Platform Wallet';
+        defaultPayment = 'UPI / Online';
       } else if (platformId === 'Namma Yatri') {
         defaultPayment = 'UPI / Online'; // Customer pays driver directly
       }

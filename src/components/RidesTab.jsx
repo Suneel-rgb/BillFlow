@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Edit2, Trash2, Calendar, MapPin, IndianRupee, RefreshCw, Plus } from 'lucide-react';
+import { Search, Edit2, Trash2, Calendar, MapPin, IndianRupee, RefreshCw, Plus, Clock } from 'lucide-react';
 
 const PLATFORMS_DETAILS = {
   Uber: { name: 'Uber Auto', style: 'bg-black text-white border-slate-800' },
@@ -16,8 +16,9 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
   const [paymentFilter, setPaymentFilter] = useState('All');
   const [dateRange, setDateRange] = useState('All'); // All, Today, Yesterday, Last7Days, Month
   const [sortBy, setSortBy] = useState('date-desc');
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Filtering Logic
+  // Filtering Logic (strictly display only today added rides)
   const filteredRides = rides.filter(ride => {
     // Search matching route/notes
     const matchesSearch = 
@@ -30,30 +31,12 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
     // Filter matching Payment
     const matchesPayment = paymentFilter === 'All' || ride.paymentMode === paymentFilter;
 
-    // Filter matching Date Range
-    let matchesDate = true;
-    if (dateRange !== 'All' && ride.date) {
-      const rideDate = new Date(ride.date);
-      rideDate.setHours(0, 0, 0, 0);
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (dateRange === 'Today') {
-        matchesDate = rideDate.getTime() === today.getTime();
-      } else if (dateRange === 'Yesterday') {
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
-        matchesDate = rideDate.getTime() === yesterday.getTime();
-      } else if (dateRange === 'Last7Days') {
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        matchesDate = rideDate >= sevenDaysAgo && rideDate <= today;
-      } else if (dateRange === 'Month') {
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        matchesDate = rideDate >= firstDayOfMonth && rideDate <= today;
-      }
-    }
+    // Filter matching Date Range (strictly today's rides only)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const rideDate = new Date(ride.date);
+    rideDate.setHours(0, 0, 0, 0);
+    const matchesDate = rideDate.getTime() === today.getTime();
 
     return matchesSearch && matchesPlatform && matchesPayment && matchesDate;
   });
@@ -62,8 +45,18 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
   const sortedRides = [...filteredRides].sort((a, b) => {
     switch (sortBy) {
       case 'date-asc':
+        const tA = a.createdAt || (isNaN(Number(a.id)) ? 0 : Number(a.id));
+        const tB = b.createdAt || (isNaN(Number(b.id)) ? 0 : Number(b.id));
+        if (tA || tB) {
+          return tA - tB;
+        }
         return new Date(a.date) - new Date(b.date);
       case 'date-desc':
+        const timeA = a.createdAt || (isNaN(Number(a.id)) ? 0 : Number(a.id));
+        const timeB = b.createdAt || (isNaN(Number(b.id)) ? 0 : Number(b.id));
+        if (timeA || timeB) {
+          return timeB - timeA;
+        }
         return new Date(b.date) - new Date(a.date);
       case 'fare-asc':
         return a.amount - b.amount;
@@ -81,6 +74,12 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
   // Metrics for filtered rides
   const totalFares = filteredRides.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
   const totalDistance = filteredRides.reduce((sum, r) => sum + parseFloat(r.distance || 0), 0);
+
+  const activeFiltersCount = 
+    (platformFilter !== 'All' ? 1 : 0) + 
+    (paymentFilter !== 'All' ? 1 : 0) + 
+    (dateRange !== 'All' ? 1 : 0) + 
+    (sortBy !== 'date-desc' ? 1 : 0);
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -104,7 +103,7 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
         </div>
         <button
           onClick={onAddRideClick}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold shadow-lg shadow-amber-500/10 transition-all hover:-translate-y-0.5 cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-955 font-bold shadow-lg shadow-amber-500/10 transition-all hover:-translate-y-0.5 cursor-pointer"
         >
           <Plus size={18} />
           <span>Log Ride Fare</span>
@@ -112,21 +111,21 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
       </div>
 
       {/* Quick Filter Summary Widget */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-card p-4 rounded-2xl border border-amber-500/10">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="glass-card p-4 rounded-2xl border border-amber-500/10 col-span-2 md:col-span-1">
           <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Total Earnings</span>
           <span className="text-xl font-black text-emerald-400 mt-1 block">₹{totalFares.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
           <span className="text-[9px] text-emerald-500/80 block mt-0.5">{filteredRides.length} rides logged</span>
         </div>
-        <div className="glass-card p-4 rounded-2xl border border-slate-800">
+        <div className="glass-card p-4 rounded-2xl border border-slate-800 col-span-1">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Logged Distance</span>
           <span className="text-xl font-bold text-slate-200 mt-1 block">{totalDistance.toFixed(1)} km</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">Avg: {filteredRides.length > 0 ? (totalDistance / filteredRides.length).toFixed(1) : 0} km / ride</span>
+          <span className="text-[9px] text-slate-500 block mt-0.5">Avg: {filteredRides.length > 0 ? (totalDistance / filteredRides.length).toFixed(1) : 0} km</span>
         </div>
-        <div className="glass-card p-4 rounded-2xl border border-slate-800">
+        <div className="glass-card p-4 rounded-2xl border border-slate-800 col-span-1">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Average Fare</span>
           <span className="text-xl font-bold text-slate-200 mt-1 block">₹{filteredRides.length > 0 ? (totalFares / filteredRides.length).toFixed(0) : 0}</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">Average earnings per ride</span>
+          <span className="text-[9px] text-slate-500 block mt-0.5">Avg earnings per ride</span>
         </div>
       </div>
 
@@ -147,20 +146,36 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
             />
           </div>
 
-          {/* Quick Clear Filter Button */}
-          {(searchTerm || platformFilter !== 'All' || paymentFilter !== 'All' || dateRange !== 'All') && (
+          <div className="flex gap-2 w-full md:w-auto">
+            {/* Mobile Filters Toggle Button */}
             <button
-              onClick={resetFilters}
-              className="text-xs text-amber-400 hover:text-amber-300 font-semibold py-2 px-3 hover:bg-amber-500/10 rounded-xl transition-colors border border-amber-500/20 flex items-center gap-1 cursor-pointer"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex-1 md:hidden flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 border border-slate-800 text-slate-305 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
-              <RefreshCw size={12} />
-              <span>Reset Filters</span>
+              <span>⚙️</span>
+              <span>{showFilters ? 'Hide Filters' : 'Filters & Sort'}</span>
+              {activeFiltersCount > 0 && (
+                <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                  {activeFiltersCount}
+                </span>
+              )}
             </button>
-          )}
+
+            {/* Quick Clear Filter Button */}
+            {(searchTerm || platformFilter !== 'All' || paymentFilter !== 'All' || dateRange !== 'All' || sortBy !== 'date-desc') && (
+              <button
+                onClick={resetFilters}
+                className="text-xs text-amber-400 hover:text-amber-300 font-semibold py-2.5 px-3 hover:bg-amber-500/10 rounded-xl transition-colors border border-amber-500/20 flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <RefreshCw size={12} />
+                <span className="hidden sm:inline">Reset Filters</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Multi-Filter Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <div className={`${showFilters ? 'grid' : 'hidden md:grid'} grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-3 pt-3 border-t border-slate-900/60 md:border-t-0 md:pt-0`}>
           {/* Platform filter */}
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Platform</label>
@@ -190,23 +205,6 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
               <option value="All">All Payment Modes</option>
               <option value="Cash">Cash</option>
               <option value="UPI / Online">UPI / Online</option>
-              <option value="Platform Wallet">Platform Wallet</option>
-            </select>
-          </div>
-
-          {/* Date range filter */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Time Period</label>
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full bg-slate-900/40 border border-slate-800 rounded-xl px-3 py-2 text-slate-355 text-xs focus:outline-none focus:border-amber-500"
-            >
-              <option value="All">All History</option>
-              <option value="Today">Today</option>
-              <option value="Yesterday">Yesterday</option>
-              <option value="Last7Days">Last 7 Days</option>
-              <option value="Month">This Month</option>
             </select>
           </div>
 
@@ -218,8 +216,8 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
               onChange={(e) => setSortBy(e.target.value)}
               className="w-full bg-slate-900/40 border border-slate-800 rounded-xl px-3 py-2 text-slate-355 text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="date-desc">Date: Latest First</option>
-              <option value="date-asc">Date: Oldest First</option>
+              <option value="date-desc">Added On: Newest First</option>
+              <option value="date-asc">Added On: Oldest First</option>
               <option value="fare-desc">Fare: High to Low</option>
               <option value="fare-asc">Fare: Low to High</option>
               <option value="net-desc">Net Earnings: High to Low</option>
@@ -266,12 +264,27 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
                       </span>
                     </div>
 
-                    {/* Metadata: Date, payment, distance */}
+                    {/* Metadata: Date, Time, payment, distance */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-450">
                       <span className="flex items-center gap-1">
                         <Calendar size={12} className="text-slate-500" />
                         <span>{new Date(ride.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                       </span>
+                      {(() => {
+                        const timestamp = ride.createdAt || (isNaN(Number(ride.id)) ? null : Number(ride.id));
+                        if (!timestamp) return null;
+                        try {
+                          const timeStr = new Date(timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
+                          return (
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} className="text-slate-500" />
+                              <span>{timeStr}</span>
+                            </span>
+                          );
+                        } catch (e) {
+                          return null;
+                        }
+                      })()}
                       <span className="flex items-center gap-1">
                         <IndianRupee size={12} className="text-slate-500" />
                         <span>Via: {ride.paymentMode}</span>
@@ -296,20 +309,20 @@ export default function RidesTab({ rides, onAddRideClick, onEdit, onDelete }) {
                   </div>
 
                   {/* Edit/Delete Actions */}
-                  <div className="flex items-center gap-1.5 pl-4 border-l border-slate-900">
+                  <div className="flex items-center gap-2 pl-4 border-l border-slate-900">
                     <button
                       onClick={() => onEdit(ride)}
-                      className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700/50 transition-all cursor-pointer"
+                      className="p-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700/50 transition-all cursor-pointer"
                       title="Edit Ride"
                     >
-                      <Edit2 size={14} />
+                      <Edit2 size={18} />
                     </button>
                     <button
                       onClick={() => onDelete(ride.id)}
-                      className="p-2.5 rounded-xl text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
+                      className="p-3 rounded-xl text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
                       title="Delete Ride"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </div>

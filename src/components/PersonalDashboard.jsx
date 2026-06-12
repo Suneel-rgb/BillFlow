@@ -162,7 +162,7 @@ export default function PersonalDashboard({
 
               <div className="space-y-2">
                 {isEditingBudget ? (
-                  <form onSubmit={handleSaveBudget} className="flex gap-2">
+                  <form onSubmit={handleSaveBudget} className="flex justify-center sm:justify-start gap-2">
                     <input
                       type="number"
                       value={tempBudget}
@@ -171,7 +171,7 @@ export default function PersonalDashboard({
                     />
                     <button
                       type="submit"
-                      className="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-955 font-bold text-xs cursor-pointer"
                     >
                       Save
                     </button>
@@ -187,11 +187,11 @@ export default function PersonalDashboard({
                     </button>
                   </form>
                 ) : (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center sm:justify-start gap-3">
                     <span className="text-2xl font-black text-slate-100">₹{personalBudget.toLocaleString()}</span>
                     <button
                       onClick={() => setIsEditingBudget(true)}
-                      className="text-[10px] text-emerald-450 hover:text-emerald-450 font-bold px-2 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20 cursor-pointer"
+                      className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold px-2.5 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20 cursor-pointer"
                     >
                       Edit Budget
                     </button>
@@ -254,7 +254,7 @@ export default function PersonalDashboard({
             </div>
 
             <form onSubmit={handleQuickBill} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="sm:col-span-1">
                   <label className="block text-[10px] font-bold text-slate-455 uppercase tracking-wider mb-1.5">Category</label>
                   <select

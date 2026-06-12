@@ -166,8 +166,8 @@ export default function Dashboard({
             </p>
           </div>
           
-          <form onSubmit={handleOdoSave} className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
+          <form onSubmit={handleOdoSave} className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3 w-full sm:w-auto">
+            <div className="space-y-1 col-span-1">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Start Odometer (km)</label>
               <input
                 type="number"
@@ -175,11 +175,11 @@ export default function Dashboard({
                 placeholder="e.g. 12050"
                 value={startOdo}
                 onChange={(e) => setStartOdo(e.target.value)}
-                className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus-glow-amber w-32 placeholder-slate-650"
+                className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus-glow-amber w-full sm:w-32 placeholder-slate-650"
               />
             </div>
             
-            <div className="space-y-1">
+            <div className="space-y-1 col-span-1">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">End Odometer (km)</label>
               <input
                 type="number"
@@ -187,13 +187,13 @@ export default function Dashboard({
                 placeholder="e.g. 12180"
                 value={endOdo}
                 onChange={(e) => setEndOdo(e.target.value)}
-                className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus-glow-amber w-32 placeholder-slate-650"
+                className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus-glow-amber w-full sm:w-32 placeholder-slate-650"
               />
             </div>
             
             <button
               type="submit"
-              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-450 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/10 transition-all cursor-pointer interactive-chip"
+              className="col-span-2 sm:col-span-auto w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-450 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/10 transition-all cursor-pointer interactive-chip"
             >
               Save KM
             </button>
@@ -327,7 +327,7 @@ export default function Dashboard({
             
             <form onSubmit={handleQuickLog} className="space-y-4">
               {/* Quick Select Buttons */}
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-5 gap-2 scrollbar-none snap-x">
                 {QUICK_PLATFORMS.map((plat) => {
                   const isSelected = quickPlatform === plat.id;
                   return (
@@ -335,10 +335,10 @@ export default function Dashboard({
                       key={plat.id}
                       type="button"
                       onClick={() => setQuickPlatform(plat.id)}
-                      className={`py-2 rounded-xl text-[10px] font-semibold border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                      className={`flex-shrink-0 min-w-[85px] sm:min-w-0 snap-center py-2.5 rounded-xl text-[10px] font-semibold border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                         isSelected
                           ? `${plat.color} border-transparent shadow-md shadow-amber-500/5`
-                          : 'bg-slate-900/40 border-slate-800 text-slate-350 hover:bg-slate-900/90'
+                          : 'bg-slate-900/40 border-slate-800 text-slate-355 hover:bg-slate-900/90'
                       }`}
                     >
                       <span className="text-sm">{plat.icon}</span>
@@ -424,9 +424,9 @@ export default function Dashboard({
               </div>
             ) : (
               todayRides.slice(0, 4).map((ride) => (
-                <div key={ride.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-900/35 border border-slate-850 text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className="text-base">
+                <div key={ride.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-900/35 border border-slate-850 text-xs gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-base flex-shrink-0">
                       {ride.platform === 'Uber' && '⚫'}
                       {ride.platform === 'Ola' && '🟢'}
                       {ride.platform === 'Rapido' && '🟡'}
@@ -434,14 +434,14 @@ export default function Dashboard({
                       {ride.platform === 'Local' && '🛺'}
                       {ride.platform === 'Other' && '📱'}
                     </span>
-                    <div>
-                      <span className="font-bold text-slate-100 block">
+                    <div className="min-w-0">
+                      <span className="font-bold text-slate-100 block truncate" title={ride.notes || `${ride.platform} Auto Ride`}>
                         {ride.notes ? ride.notes : `${ride.platform} Auto Ride`}
                       </span>
-                      <span className="text-[10px] text-slate-450">Via {ride.paymentMode}</span>
+                      <span className="text-[10px] text-slate-450 block truncate">Via {ride.paymentMode}</span>
                     </div>
                   </div>
-                  <div className="text-right flex items-center justify-end">
+                  <div className="text-right flex items-center justify-end flex-shrink-0">
                     <span className="font-black text-slate-100 text-sm">₹{ride.amount.toFixed(0)}</span>
                   </div>
                 </div>
