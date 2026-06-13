@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Mic, MicOff, X, Check, Volume2, VolumeX, LogOut, Sparkles, Navigation } from 'lucide-react';
+import { Mic, MicOff, X, Check, Volume2, VolumeX, LogOut, Sparkles, Navigation, Keyboard } from 'lucide-react';
 
 export default function DrivingMode({
   appMode,
@@ -15,6 +15,9 @@ export default function DrivingMode({
   playChime
 }) {
   const [isListening, setIsListening] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [showKeyboardFallback, setShowKeyboardFallback] = useState(false);
+  const [keyboardText, setKeyboardText] = useState('');
   const [transcript, setTranscript] = useState('');
   const [pendingEntry, setPendingEntry] = useState(null);
   const [speechError, setSpeechError] = useState('');
@@ -31,24 +34,29 @@ export default function DrivingMode({
   }, []);
 
   const toggleListening = () => {
-    if (isListening) {
+    if (isListening || isStarting) {
       recognitionRef.current?.stop();
+      setIsListening(false);
+      setIsStarting(false);
     } else {
       setPendingEntry(null);
       setSpeechError('');
-      try {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-          setSpeechError('Web Speech API is not supported in this browser.');
-          return;
-        }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        setSpeechError('Web Speech API is not supported in this browser.');
+        setShowKeyboardFallback(true);
+        return;
+      }
 
+      try {
+        setIsStarting(true);
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
         recognition.lang = 'en-IN'; // Optimized for Indian English speakers
 
         recognition.onstart = () => {
+          setIsStarting(false);
           setIsListening(true);
           setTranscript('');
           setSpeechError('');
@@ -61,16 +69,19 @@ export default function DrivingMode({
           const result = event.results[0][0].transcript;
           setTranscript(result);
           setIsListening(false);
+          setIsStarting(false);
           handleParsedSpeech(result);
         };
 
         recognition.onerror = (event) => {
           console.error('Speech recognition error', event.error);
           setIsListening(false);
+          setIsStarting(false);
           if (event.error === 'no-speech') {
             setSpeechError("No speech detected. Tap button to try again.");
           } else if (event.error === 'not-allowed') {
             setSpeechError("Microphone blocked. Web Speech API requires HTTPS (or localhost) and microphone permissions enabled in browser settings.");
+            setShowKeyboardFallback(true);
           } else if (event.error === 'network') {
             setSpeechError("Network error. Active internet connection is required for Web Speech recognition.");
           } else {
@@ -83,6 +94,7 @@ export default function DrivingMode({
 
         recognition.onend = () => {
           setIsListening(false);
+          setIsStarting(false);
         };
 
         recognitionRef.current = recognition;
@@ -90,6 +102,9 @@ export default function DrivingMode({
       } catch (e) {
         console.error('Failed to start speech recognition', e);
         setSpeechError(`Failed to start microphone: ${e.message}`);
+        setIsStarting(false);
+        setIsListening(false);
+        setShowKeyboardFallback(true);
       }
     }
   };
@@ -420,8 +435,8 @@ export default function DrivingMode({
                     isListening
                       ? 'bg-red-600 border-red-500/30 text-white animate-pulse'
                       : appMode === 'rickshaw'
-                      ? 'bg-amber-400 hover:bg-amber-300 border-amber-500/20 text-slate-950 hover:scale-[1.02] active:scale-[0.98]'
-                      : 'bg-emerald-500 hover:bg-emerald-400 border-emerald-500/20 text-slate-950 hover:scale-[1.02] active:scale-[0.98]'
+                      ? 'bg-amber-400 hover:bg-amber-300 border-amber-500/20 text-slate-955 hover:scale-[1.02] active:scale-[0.98]'
+                      : 'bg-emerald-500 hover:bg-emerald-400 border-emerald-500/20 text-slate-955 hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                   style={{ 
                     boxShadow: isListening 
@@ -443,9 +458,57 @@ export default function DrivingMode({
                     )}
                   </div>
                   <span className="text-xs font-black tracking-widest uppercase">
-                    {isListening ? 'LISTENING NOW' : 'TAP TO SPEAK'}
+                    {isListening ? 'LISTENING NOW' : isStarting ? 'STARTING...' : 'TAP TO SPEAK'}
                   </span>
                 </button>
+              </div>
+
+              {/* Manual Keyboard input toggle & field */}
+              <div className="flex flex-col items-center gap-3 w-full max-w-xs z-10">
+                <button
+                  type="button"
+                  onClick={() => setShowKeyboardFallback(!showKeyboardFallback)}
+                  className="flex items-center gap-2 px-4.5 py-2.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-full text-xs font-black tracking-wider transition-all cursor-pointer hover:bg-slate-850 active:scale-95"
+                >
+                  <Keyboard size={14} />
+                  <span>{showKeyboardFallback ? "HIDE KEYBOARD INPUT" : "TYPE COMMAND MANUALLY"}</span>
+                </button>
+
+                {showKeyboardFallback && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (keyboardText.trim()) {
+                        handleParsedSpeech(keyboardText);
+                        setKeyboardText('');
+                      }
+                    }}
+                    className="w-full flex items-center gap-2 bg-slate-900 border border-slate-805 p-1.5 rounded-2xl shadow-inner focus-within:border-slate-700 transition-all"
+                  >
+                    <input
+                      type="text"
+                      value={keyboardText}
+                      onChange={(e) => setKeyboardText(e.target.value)}
+                      placeholder={
+                        appMode === 'rickshaw'
+                          ? "e.g., Add 120 rupees Ola"
+                          : "e.g., Add 1200 rupees bill"
+                      }
+                      className="flex-1 bg-transparent border-0 outline-none text-xs px-3 text-slate-200 placeholder-slate-500 h-10 min-w-0"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!keyboardText.trim()}
+                      className={`h-10 px-4 rounded-xl font-black text-xs tracking-wider transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                        appMode === 'rickshaw'
+                          ? 'bg-amber-400 text-slate-950 hover:bg-amber-300'
+                          : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
+                      }`}
+                    >
+                      GO
+                    </button>
+                  </form>
+                )}
               </div>
 
               {/* Status / Errors */}

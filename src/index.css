@@ -306,6 +306,12 @@ textarea:focus {
   padding-right: 1.25rem;
 }
 
+@media (min-width: 768px) {
+  .swipe-actions-bg {
+    display: none !important;
+  }
+}
+
 .swipe-foreground {
   position: relative !important;
   z-index: 10 !important;
