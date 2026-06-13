@@ -1,21 +1,107 @@
 import { useState } from 'react';
-import { Search, Edit2, Trash2, Calendar, Plus, RefreshCw } from 'lucide-react';
+import { Search, Edit2, Trash2, Calendar, Plus, RefreshCw, Clock } from 'lucide-react';
 
 const CATEGORIES_DETAILS = {
-  Groceries: { name: 'Groceries / Milk', emoji: '🍎', style: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  Groceries: { name: 'Groceries / Milk', emoji: '🍎', style: 'bg-emerald-500/10 text-emerald-450 border-emerald-500/20' },
   'Rent/EMI': { name: 'Rent & EMIs', emoji: '💳', style: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
   Medical: { name: 'Medical & Health', emoji: '💊', style: 'bg-red-500/10 text-red-400 border-red-500/20' },
   Education: { name: 'Education', emoji: '📚', style: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
   Shopping: { name: 'Shopping', emoji: '🛍️', style: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
   Entertainment: { name: 'Food / Movies', emoji: '🎬', style: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  Travel: { name: 'Personal Travel', emoji: '🚗', style: 'bg-teal-500/10 text-teal-400 border-teal-500/20' },
-  Others: { name: 'Others', emoji: '💸', style: 'bg-slate-500/10 text-slate-400 border-slate-500/20' }
+  Travel: { name: 'Personal Travel', emoji: '🚗', style: 'bg-teal-500/10 text-teal-450 border-teal-500/20' },
+  Others: { name: 'Others', emoji: '💸', style: 'bg-slate-500/10 text-slate-455 border-slate-500/20' }
 };
+
+function SwipeableItem({ children, onEdit, onDelete }) {
+  const [startX, setStartX] = useState(0);
+  const [currentX, setCurrentX] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleTouchStart = (e) => {
+    if (window.innerWidth >= 768) return;
+    setStartX(e.touches[0].clientX);
+    setIsSwiping(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isSwiping) return;
+    const currentTouchX = e.touches[0].clientX;
+    let diff = currentTouchX - startX;
+    
+    if (isOpen) {
+      diff = diff - 130;
+    }
+
+    if (diff > 15) diff = 15;
+    if (diff < -150) diff = -150;
+
+    setCurrentX(diff);
+  };
+
+  const handleTouchEnd = () => {
+    setIsSwiping(false);
+    if (currentX < -65) {
+      setIsOpen(true);
+      setCurrentX(-130);
+      if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+        try { window.navigator.vibrate(15); } catch (e) {}
+      }
+    } else {
+      setIsOpen(false);
+      setCurrentX(0);
+    }
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setCurrentX(0);
+  };
+
+  return (
+    <div className="swipe-container group relative">
+      <div className="swipe-actions-bg bg-slate-955 border border-slate-900">
+        <div className="flex items-center gap-1.5 pr-1">
+          <button
+            onClick={() => {
+              onEdit();
+              handleClose();
+            }}
+            className="flex items-center justify-center p-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white min-h-[44px] w-12 transition-all cursor-pointer border border-slate-800"
+            title="Edit"
+          >
+            <Edit2 size={16} />
+          </button>
+          <button
+            onClick={() => {
+              onDelete();
+              handleClose();
+            }}
+            className="flex items-center justify-center p-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-455 min-h-[44px] w-12 transition-all cursor-pointer border border-rose-500/25"
+            title="Delete"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ transform: `translateX(${currentX}px)` }}
+        className="swipe-foreground"
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function PersonalExpensesTab({ expenses, onAddExpenseClick, onEdit, onDelete }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [dateRange, setDateRange] = useState('All');
+  const [dateRange, setDateRange] = useState('All'); // All, Today, Yesterday, Week, Month
   const [sortBy, setSortBy] = useState('date-desc');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -24,30 +110,33 @@ export default function PersonalExpensesTab({ expenses, onAddExpenseClick, onEdi
     const matchesSearch = 
       (exp.notes && exp.notes.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (exp.category && exp.category.toLowerCase().includes(searchTerm.toLowerCase()));
-
+    
     const matchesCategory = categoryFilter === 'All' || exp.category === categoryFilter;
 
+    // Filter matching Date Range
     let matchesDate = true;
-    if (dateRange !== 'All' && exp.date) {
-      const expDate = new Date(exp.date);
-      expDate.setHours(0, 0, 0, 0);
-
+    if (exp.date) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const expDate = new Date(exp.date);
+      expDate.setHours(0, 0, 0, 0);
 
       if (dateRange === 'Today') {
         matchesDate = expDate.getTime() === today.getTime();
       } else if (dateRange === 'Yesterday') {
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
         matchesDate = expDate.getTime() === yesterday.getTime();
-      } else if (dateRange === 'Last7Days') {
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(today.getDate() - 7);
+      } else if (dateRange === 'Week') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
         matchesDate = expDate >= sevenDaysAgo && expDate <= today;
       } else if (dateRange === 'Month') {
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        matchesDate = expDate >= firstDayOfMonth && expDate <= today;
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        matchesDate = expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
       }
     }
 
@@ -58,8 +147,14 @@ export default function PersonalExpensesTab({ expenses, onAddExpenseClick, onEdi
   const sortedExpenses = [...filteredExpenses].sort((a, b) => {
     switch (sortBy) {
       case 'date-asc':
+        const tA = a.createdAt || (isNaN(Number(a.id)) ? 0 : Number(a.id));
+        const tB = b.createdAt || (isNaN(Number(b.id)) ? 0 : Number(b.id));
+        if (tA || tB) return tA - tB;
         return new Date(a.date) - new Date(b.date);
       case 'date-desc':
+        const timeA = a.createdAt || (isNaN(Number(a.id)) ? 0 : Number(a.id));
+        const timeB = b.createdAt || (isNaN(Number(b.id)) ? 0 : Number(b.id));
+        if (timeA || timeB) return timeB - timeA;
         return new Date(b.date) - new Date(a.date);
       case 'amount-asc':
         return a.amount - b.amount;
@@ -70,12 +165,7 @@ export default function PersonalExpensesTab({ expenses, onAddExpenseClick, onEdi
     }
   });
 
-  const categoryTotals = expenses.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + parseFloat(exp.amount || 0);
-    return acc;
-  }, {});
-
-  const totalSpent = filteredExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+  const totalSpent = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
 
   const activeFiltersCount = 
     (categoryFilter !== 'All' ? 1 : 0) + 
@@ -90,70 +180,63 @@ export default function PersonalExpensesTab({ expenses, onAddExpenseClick, onEdi
   };
 
   return (
-    <div className="space-y-6 animate-fade-in text-emerald-100">
-      {/* Header */}
+    <div className="space-y-6 animate-fade-in relative z-10 text-emerald-100">
+      
+      {/* Top Welcome / Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white font-heading">
-            Personal Outlays
+            Spends Ledger
           </h1>
           <p className="text-slate-400 text-sm mt-0.5">
-            Log and review grocery records, family entertainment, or shopping purchases.
+            Log groceries, transport, dinners, shopping, and everyday personal expenses.
           </p>
         </div>
         <button
           onClick={onAddExpenseClick}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-650 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold shadow-lg shadow-emerald-500/10 transition-all hover:-translate-y-0.5 cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 hover:text-emerald-355 hover:bg-slate-850 hover:border-slate-700 transition-all text-xs cursor-pointer font-bold"
         >
-          <Plus size={18} />
-          <span>Log Expense</span>
+          <Plus size={16} />
+          <span>Log Personal Spend</span>
         </button>
       </div>
 
-      {/* Category Summary Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        {Object.keys(CATEGORIES_DETAILS).map(catKey => {
-          const detail = CATEGORIES_DETAILS[catKey];
-          const total = categoryTotals[catKey] || 0;
-          return (
-            <div key={catKey} className="glass-card p-3 rounded-2xl border border-slate-800 flex flex-col justify-between gap-2.5">
-              <div className="flex justify-between items-start">
-                <span className={`p-1 text-sm rounded-lg border ${detail.style}`}>
-                  {detail.emoji}
-                </span>
-                <span className="text-[7px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">Sum</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 block font-semibold truncate leading-none">{detail.name.split(' ')[0]}</span>
-                <span className="text-sm font-extrabold text-slate-100 mt-1 block">₹{total.toFixed(0)}</span>
-              </div>
-            </div>
-          );
-        })}
+      {/* Stats Widgets */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 font-heading">
+        <div className="glass-card p-4 rounded-2xl border border-emerald-500/15 col-span-2 md:col-span-1">
+          <span className="text-[9px] font-bold text-emerald-450 uppercase tracking-wider block">Total Spent Selected</span>
+          <span className="text-xl font-black text-emerald-400 mt-1 block font-heading">₹{totalSpent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+          <span className="text-[9px] text-slate-500 block mt-0.5">{filteredExpenses.length} spend events logged</span>
+        </div>
+        <div className="glass-card p-4 rounded-2xl border border-slate-850 col-span-1">
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Average Spend</span>
+          <span className="text-xl font-bold text-slate-200 mt-1 block font-heading">₹{filteredExpenses.length > 0 ? (totalSpent / filteredExpenses.length).toFixed(0) : 0}</span>
+          <span className="text-[9px] text-slate-500 block mt-0.5">Average per spend ticket</span>
+        </div>
       </div>
 
-      {/* Filters and search panel */}
+      {/* Filters & Search Panel */}
       <div className="glass-card p-5 rounded-2xl space-y-4 border border-slate-850">
+        
+        {/* Search & Toggle row */}
         <div className="flex flex-col md:flex-row md:items-center gap-3">
-          {/* Search */}
           <div className="relative flex-1">
             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
               <Search size={16} />
             </span>
             <input
               type="text"
-              placeholder="Search by notes, category detail..."
+              placeholder="Search by keywords, tags..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-900/60 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-sm transition-all"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none text-xs transition-all"
             />
           </div>
 
           <div className="flex gap-2 w-full md:w-auto">
-            {/* Mobile Filters Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex-1 md:hidden flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 border border-slate-800 text-slate-305 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="flex-1 md:hidden flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
               <span>⚙️</span>
               <span>{showFilters ? 'Hide Filters' : 'Filters & Sort'}</span>
@@ -177,126 +260,171 @@ export default function PersonalExpensesTab({ expenses, onAddExpenseClick, onEdi
           </div>
         </div>
 
-        {/* Multi-Filter Row */}
-        <div className={`${showFilters ? 'grid' : 'hidden md:grid'} grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-900/60 md:border-t-0 md:pt-0`}>
-          {/* Category filter */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Category</label>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full bg-slate-900/40 border border-slate-800 rounded-xl px-3 py-2 text-slate-355 text-xs focus:outline-none focus:border-emerald-500"
-            >
-              <option value="All">All Categories</option>
-              {Object.keys(CATEGORIES_DETAILS).map(k => (
-                <option key={k} value={k}>{CATEGORIES_DETAILS[k].name}</option>
+        {/* Chips for category & dates */}
+        <div className="space-y-3 pt-2">
+          {/* Date Chips */}
+          <div className="space-y-1 text-left">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Filter by Date</span>
+            <div className="flex gap-2 overflow-x-auto scrollbar-none snap-x pb-1">
+              {[
+                { id: 'All', label: 'All History' },
+                { id: 'Today', label: 'Today' },
+                { id: 'Yesterday', label: 'Yesterday' },
+                { id: 'Week', label: 'Last 7 Days' },
+                { id: 'Month', label: 'This Month' }
+              ].map(d => (
+                <button
+                  key={d.id}
+                  onClick={() => setDateRange(d.id)}
+                  className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold border snap-center cursor-pointer transition-all ${
+                    dateRange === d.id
+                      ? 'bg-emerald-500 text-slate-955 border-transparent shadow-md'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {d.label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
-          {/* Date range filter */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Time Period</label>
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full bg-slate-900/40 border border-slate-800 rounded-xl px-3 py-2 text-slate-355 text-xs focus:outline-none focus:border-emerald-500"
-            >
-              <option value="All">All History</option>
-              <option value="Today">Today</option>
-              <option value="Yesterday">Yesterday</option>
-              <option value="Last7Days">Last 7 Days</option>
-              <option value="Month">This Month</option>
-            </select>
+          {/* Category Chips */}
+          <div className="space-y-1 text-left">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Filter by Category</span>
+            <div className="flex gap-2 overflow-x-auto scrollbar-none snap-x pb-1">
+              {[
+                { id: 'All', label: 'All Categories' },
+                { id: 'Groceries', label: '🍎 Groceries' },
+                { id: 'Rent/EMI', label: '💳 Rent/EMIs' },
+                { id: 'Medical', label: '💊 Medical' },
+                { id: 'Education', label: '📚 Education' },
+                { id: 'Shopping', label: '🛍️ Shopping' },
+                { id: 'Entertainment', label: '🎬 Food / Entertainment' },
+                { id: 'Travel', label: '🚗 Travel' },
+                { id: 'Others', label: '💸 Others' }
+              ].map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setCategoryFilter(c.id)}
+                  className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold border snap-center cursor-pointer transition-all ${
+                    categoryFilter === c.id
+                      ? 'bg-emerald-500 text-slate-955 border-transparent shadow-md'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
           </div>
+        </div>
 
-          {/* Sort selection */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-455 uppercase tracking-wider block">Sort Expenses</label>
+        {/* Collapsible sort selection */}
+        <div className={`${showFilters ? 'block' : 'hidden md:block'} pt-2`}>
+          <div className="space-y-1 text-left">
+            <label className="text-[11px] font-bold text-slate-450 uppercase tracking-wider block">Sort Spends</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full bg-slate-900/40 border border-slate-800 rounded-xl px-3 py-2 text-slate-355 text-xs focus:outline-none focus:border-emerald-500"
+              className="w-full sm:w-64 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-300 text-xs focus:outline-none focus:border-emerald-500"
             >
-              <option value="date-desc">Date: Latest First</option>
-              <option value="date-asc">Date: Oldest First</option>
-              <option value="amount-desc">Cost: High to Low</option>
-              <option value="amount-asc">Cost: Low to High</option>
+              <option value="date-desc">Added On: Newest First</option>
+              <option value="date-asc">Added On: Oldest First</option>
+              <option value="amount-desc">Amount: High to Low</option>
+              <option value="amount-asc">Amount: Low to High</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Expenses Results List */}
+      {/* Spends Feed */}
       <div className="space-y-3">
-        <div className="flex justify-between items-center px-1">
-          <span className="text-xs font-semibold text-slate-450 uppercase tracking-wider">Spend Itemised Ledger</span>
-          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/5 px-2.5 py-1 rounded-lg border border-emerald-500/10">Filter Total: ₹{totalSpent.toFixed(0)}</span>
-        </div>
-
         {sortedExpenses.length === 0 ? (
-          <div className="glass-card p-12 text-center rounded-2xl border border-dashed border-slate-800">
-            <p className="text-slate-400 font-medium">No expenses logged for this filter criteria.</p>
-            <p className="text-slate-550 text-xs mt-1">Log groceries, transport, or dinner treats to record budget activities!</p>
+          <div className="glass-card p-12 text-center rounded-2xl border border-dashed border-slate-850">
+            <p className="text-slate-450 font-medium">No personal spend receipts match your filter criteria.</p>
+            <p className="text-slate-550 text-xs mt-1">Try resetting the filters or log a spend to populate the ledger!</p>
           </div>
         ) : (
           sortedExpenses.map((exp) => {
-            const detail = CATEGORIES_DETAILS[exp.category] || CATEGORIES_DETAILS.Others;
+            const cat = CATEGORIES_DETAILS[exp.category] || CATEGORIES_DETAILS.Others;
             return (
-              <div
+              <SwipeableItem
                 key={exp.id}
-                className="glass-card p-4 md:p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800/80 hover:border-slate-700/80 transition-all"
+                onEdit={() => onEdit(exp)}
+                onDelete={() => onDelete(exp.id)}
               >
-                {/* Info */}
-                <div className="flex items-start gap-4">
-                  <span className={`p-3 bg-slate-900/50 rounded-xl border border-slate-800 text-lg flex items-center justify-center`}>
-                    {detail.emoji}
-                  </span>
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="text-base font-bold text-slate-100">
-                        {exp.notes ? exp.notes : detail.name}
-                      </h4>
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase border ${detail.style}`}>
-                        {detail.name}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-450">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} className="text-slate-500" />
-                        <span>{new Date(exp.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Costs & Actions */}
-                <div className="flex items-center justify-between md:justify-end gap-6 border-t border-slate-900 pt-3 md:pt-0 md:border-t-0">
-                  <div className="text-left md:text-right">
-                    <span className="text-lg font-black text-rose-400">
-                      -₹{exp.amount.toFixed(0)}
+                <div
+                  className="glass-card p-4 md:p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-850 hover:border-slate-800 transition-all text-left"
+                >
+                  {/* Info Area */}
+                  <div className="flex items-start gap-4">
+                    <span className="p-3 bg-slate-955 border border-slate-850 rounded-xl text-lg flex items-center justify-center flex-shrink-0">
+                      {cat.emoji}
                     </span>
+
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="text-sm sm:text-base font-bold text-slate-100 truncate max-w-[200px] sm:max-w-xs" title={exp.notes || cat.name}>
+                          {exp.notes ? exp.notes : cat.name}
+                        </h4>
+                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase border flex-shrink-0 ${cat.style}`}>
+                          {cat.name}
+                        </span>
+                      </div>
+
+                      {/* Metadata: Date & Time */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-450 pt-0.5">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar size={12} className="text-slate-500 flex-shrink-0" />
+                          <span>{new Date(exp.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        </span>
+                        {(() => {
+                          const timestamp = exp.createdAt || (isNaN(Number(exp.id)) ? null : Number(exp.id));
+                          if (!timestamp) return null;
+                          try {
+                            const timeStr = new Date(timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
+                            return (
+                              <span className="flex items-center gap-1.5">
+                                <Clock size={12} className="text-slate-500 flex-shrink-0" />
+                                <span>{timeStr}</span>
+                              </span>
+                            );
+                          } catch (e) {
+                            return null;
+                          }
+                        })()}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pl-4 border-l border-slate-900">
-                    <button
-                      onClick={() => onEdit(exp)}
-                      className="p-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700/50 transition-all cursor-pointer"
-                      title="Edit Expense"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button
-                      onClick={() => onDelete(exp.id)}
-                      className="p-3 rounded-xl text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
-                      title="Delete Expense"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                  {/* Right Amount block */}
+                  <div className="flex items-center justify-between md:justify-end gap-6 border-t border-slate-900 pt-3 md:pt-0 md:border-t-0">
+                    <div className="text-left md:text-right">
+                      <span className="text-base sm:text-lg font-black text-rose-455">
+                        -₹{exp.amount.toFixed(0)}
+                      </span>
+                    </div>
+
+                    {/* Desktop actions pane */}
+                    <div className="hidden md:flex items-center gap-2 pl-4 border-l border-slate-900">
+                      <button
+                        onClick={() => onEdit(exp)}
+                        className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-all cursor-pointer"
+                        title="Edit Spend"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(exp.id)}
+                        className="p-2.5 rounded-xl text-slate-400 hover:text-rose-450 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
+                        title="Delete Spend"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </SwipeableItem>
             );
           })
         )}

@@ -1,8 +1,10 @@
 // Analytics Tab for Personal Mode
+import { BarChart3, PieChart, Download, TrendingDown, Wallet, AlertCircle } from 'lucide-react';
 
 export default function PersonalAnalyticsTab({ bills, personalExpenses }) {
   // Current Month String
   const currentMonthStr = new Date().toISOString().substring(0, 7);
+  const monthLabel = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
   // Filter this month's items
   const thisMonthBills = bills.filter(b => b.dueDate && b.dueDate.startsWith(currentMonthStr));
@@ -16,7 +18,7 @@ export default function PersonalAnalyticsTab({ bills, personalExpenses }) {
 
   const totalMonthlySpending = paidBillsThisMonth + totalExpensesThisMonth;
 
-  // Category Breakdown (combines paid bills and personal expenses)
+  // Category Breakdown
   const categoryTotals = {};
   
   thisMonthBills.forEach(b => {
@@ -46,27 +48,30 @@ export default function PersonalAnalyticsTab({ bills, personalExpenses }) {
   });
 
   const maxCategoryValue = sortedCategories.length > 0 ? Math.max(...sortedCategories.map(c => c.value)) : 1;
+  const totalPaymentModes = Object.values(paymentModeTotals).reduce((s, v) => s + v, 0) || 1;
 
-  // CSV Exporter for personal logs
+  // Find most used payment mode
+  const topPaymentMode = Object.keys(paymentModeTotals).reduce(
+    (top, mode) => paymentModeTotals[mode] > (paymentModeTotals[top] || 0) ? mode : top,
+    'UPI / Online'
+  );
+
+  // CSV Exporter
   const handleExportCSV = () => {
-    // 1. Headers
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Type,Title/Category,Amount (INR),Date/Due Date,Payment Mode,Status/Notes,Frequency\n";
 
-    // 2. Add Bills
     bills.forEach(b => {
       const escapedTitle = (b.title || "").replace(/,/g, " ");
       const freq = b.frequency || "Monthly";
       csvContent += `Bill,${escapedTitle},${b.amount},${b.dueDate},${b.paymentMode},${b.status},${freq}\n`;
     });
 
-    // 3. Add Expenses
     personalExpenses.forEach(e => {
       const escapedNotes = (e.notes || "").replace(/,/g, " ");
       csvContent += `Expense,${e.category},${e.amount},${e.date},${e.paymentMode},${escapedNotes},One-time\n`;
     });
 
-    // 4. Download Trigger
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -76,107 +81,136 @@ export default function PersonalAnalyticsTab({ bills, personalExpenses }) {
     document.body.removeChild(link);
   };
 
+  // Color assignments for payment mode bars
+  const paymentModeColors = {
+    'UPI / Online': { bar: 'from-emerald-500 to-teal-400', dot: 'bg-emerald-500' },
+    'Cash': { bar: 'from-amber-500 to-yellow-400', dot: 'bg-amber-500' },
+    'Credit / Debit Card': { bar: 'from-indigo-500 to-purple-500', dot: 'bg-indigo-500' }
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in text-emerald-100">
-      {/* Top Welcome / Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-5 animate-fade-in text-left relative z-10">
+      
+      {/* Header */}
+      <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white font-heading">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-heading">
             Personal Analytics
           </h1>
-          <p className="text-slate-400 text-sm mt-0.5">
-            Understand your monthly household bills and personal outlays.
+          <p className="text-slate-500 text-xs sm:text-sm mt-1">
+            Monthly household bills & spend patterns — {monthLabel}
           </p>
         </div>
         <button
           onClick={handleExportCSV}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 border border-emerald-500/20 text-emerald-450 hover:bg-slate-850 hover:text-emerald-350 transition-all font-bold cursor-pointer"
+          className="self-start flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 text-emerald-400 hover:text-emerald-300 border border-emerald-500/15 hover:border-emerald-500/30 font-bold transition-all cursor-pointer text-xs"
         >
-          <span>Export Personal CSV</span>
+          <Download size={14} />
+          <span>Export Ledger</span>
         </button>
       </div>
 
-      {/* Analytics Summary Widget */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="glass-card p-5 rounded-2xl border border-emerald-500/10">
-          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block font-heading">Monthly Outgoings</span>
-          <span className="text-2xl font-black text-slate-100 mt-2 block">₹{totalMonthlySpending.toLocaleString()}</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">Paid Bills: ₹{paidBillsThisMonth.toLocaleString()} | Spends: ₹{totalExpensesThisMonth.toLocaleString()}</span>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="glass-card p-4 rounded-2xl border border-emerald-500/10">
+          <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest block">Spent This Month</span>
+          <span className="text-xl font-black text-slate-100 mt-2 block">₹{totalMonthlySpending.toLocaleString()}</span>
+          <div className="flex gap-2 mt-2 text-[9px] text-slate-600">
+            <span>Bills: ₹{paidBillsThisMonth.toLocaleString()}</span>
+            <span>•</span>
+            <span>Spends: ₹{totalExpensesThisMonth.toLocaleString()}</span>
+          </div>
         </div>
-        <div className="glass-card p-5 rounded-2xl border border-slate-800">
-          <span className="text-[10px] font-bold text-rose-450 uppercase tracking-wider block font-heading">Pending Bills Payments</span>
-          <span className="text-2xl font-black text-rose-400 mt-2 block">₹{unpaidBillsThisMonth.toLocaleString()}</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">Logged: ₹{totalBillsThisMonth.toLocaleString()} total bills this month</span>
+        <div className="glass-card p-4 rounded-2xl border border-slate-800/40">
+          <div className="flex items-center gap-1.5 mb-2">
+            <AlertCircle size={10} className="text-rose-400" />
+            <span className="text-[9px] font-bold text-rose-400 uppercase tracking-widest">Pending</span>
+          </div>
+          <span className="text-xl font-black text-rose-400 block">₹{unpaidBillsThisMonth.toLocaleString()}</span>
+          <span className="text-[9px] text-slate-600 block mt-2">Total billed: ₹{totalBillsThisMonth.toLocaleString()}</span>
         </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        
-        {/* Category Split progress bars */}
-        <div className="glass-card p-6 rounded-3xl border border-slate-800/80 md:col-span-8 space-y-5">
-          <div>
-            <h3 className="font-bold text-base text-slate-200">Category Spending Split</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Highest outlays across bills and personal categories this month.</p>
-          </div>
+      {/* Category Split */}
+      <div className="glass-card p-5 rounded-2xl border border-slate-800/40">
+        <h3 className="font-bold text-sm text-slate-300 mb-1 flex items-center gap-2">
+          <BarChart3 size={15} className="text-emerald-400" />
+          <span>Category Breakdown</span>
+        </h3>
+        <p className="text-[10px] text-slate-600 mb-4">Highest outlays this month</p>
 
-          <div className="space-y-4">
-            {sortedCategories.length === 0 ? (
-              <div className="p-12 text-center text-xs text-slate-500 bg-slate-950/30 rounded-2xl border border-dashed border-slate-800">
-                Log bills or personal outlays to view category split details.
-              </div>
-            ) : (
-              sortedCategories.map((cat, idx) => {
-                const percentage = Math.round((cat.value / maxCategoryValue) * 100);
-                return (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-300">{cat.name}</span>
-                      <span className="text-slate-100">₹{cat.value.toLocaleString()}</span>
-                    </div>
-                    <div className="w-full bg-slate-900/60 h-2.5 rounded-full overflow-hidden border border-slate-850">
-                      <div 
-                        className="bg-emerald-500 h-full rounded-full transition-all duration-500 ease-out" 
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
+        <div className="space-y-3.5">
+          {sortedCategories.length === 0 ? (
+            <div className="p-10 text-center text-xs text-slate-600 bg-slate-900/20 rounded-2xl border border-dashed border-slate-800/40">
+              Log bills or spends to see category splits.
+            </div>
+          ) : (
+            sortedCategories.map((cat, idx) => {
+              const percentage = Math.round((cat.value / maxCategoryValue) * 100);
+              const isBill = cat.name.startsWith('Bill:');
+              return (
+                <div key={idx} className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-medium flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${isBill ? 'bg-teal-400' : 'bg-violet-400'}`} />
+                      <span className="truncate max-w-[200px]">{cat.name}</span>
+                    </span>
+                    <span className="text-slate-300 font-bold tabular-nums">₹{cat.value.toLocaleString()}</span>
                   </div>
-                );
-              })
-            )}
-          </div>
+                  <div className="w-full bg-slate-900/60 border border-slate-800/30 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-700 ease-out ${isBill ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-violet-500 to-purple-400'}`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Payment Mode Distribution */}
+      <div className="glass-card p-5 rounded-2xl border border-slate-800/40">
+        <h3 className="font-bold text-sm text-slate-300 mb-1 flex items-center gap-2">
+          <PieChart size={15} className="text-emerald-400" />
+          <span>Payment Channels</span>
+        </h3>
+        <p className="text-[10px] text-slate-600 mb-4">Where your money flows</p>
+
+        <div className="space-y-3.5">
+          {Object.keys(paymentModeTotals).length === 0 ? (
+            <div className="text-center py-6 text-xs text-slate-600">
+              No paid records found this month.
+            </div>
+          ) : (
+            Object.keys(paymentModeTotals).map((mode) => {
+              const amount = paymentModeTotals[mode];
+              const pct = ((amount / totalPaymentModes) * 100).toFixed(0);
+              const colors = paymentModeColors[mode] || { bar: 'from-slate-500 to-slate-400', dot: 'bg-slate-500' };
+              return (
+                <div key={mode} className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-medium text-slate-400 flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
+                      {mode}
+                    </span>
+                    <span className="font-bold text-slate-300 tabular-nums">₹{amount.toLocaleString()} <span className="text-slate-600 font-normal">({pct}%)</span></span>
+                  </div>
+                  <div className="w-full bg-slate-900/60 border border-slate-800/30 rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${colors.bar} transition-all duration-700 ease-out`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {/* Payment mode split */}
-        <div className="glass-card p-6 rounded-3xl border border-slate-800/80 md:col-span-4 space-y-5 flex flex-col justify-between">
-          <div>
-            <h3 className="font-bold text-base text-slate-200">Payment Allocations</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Where your money goes by payment channels.</p>
-          </div>
-
-          <div className="space-y-4 my-4">
-            {Object.keys(paymentModeTotals).length === 0 ? (
-              <div className="text-center py-6 text-xs text-slate-500">
-                No payment mode allocations to display.
-              </div>
-            ) : (
-              Object.keys(paymentModeTotals).map((mode) => {
-                const amount = paymentModeTotals[mode];
-                return (
-                  <div key={mode} className="flex justify-between items-center text-xs">
-                    <span className="font-medium text-slate-450">{mode}</span>
-                    <span className="font-bold text-slate-200">₹{amount.toLocaleString()}</span>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          <div className="pt-4 border-t border-slate-900 text-center">
-            <span className="text-[10px] font-semibold text-emerald-400 flex items-center justify-center gap-1.5 bg-emerald-500/5 py-2 rounded-xl border border-emerald-500/10">
-              🥇 Most active mode: <strong className="text-slate-100">UPI / Online</strong>
-            </span>
-          </div>
+        <div className="mt-4 p-3 rounded-xl bg-slate-900/30 border border-slate-800/30 text-[10px] text-slate-500 flex items-center gap-1.5">
+          🥇 Primary channel: <strong className="text-emerald-400">{topPaymentMode}</strong>
         </div>
       </div>
     </div>

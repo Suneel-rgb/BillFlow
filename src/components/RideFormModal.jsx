@@ -1,19 +1,18 @@
 import { useState } from 'react';
-import { X, MapPin } from 'lucide-react';
+import { X, MapPin, Banknote, Smartphone, ChevronDown } from 'lucide-react';
 
 const PLATFORMS = [
-  { id: 'Uber', name: 'Uber Auto', color: 'bg-black text-white border-slate-800 hover:bg-slate-900' },
-  { id: 'Ola', name: 'Ola Auto', color: 'bg-lime-500 text-slate-950 border-lime-600 hover:bg-lime-400 font-bold' },
-  { id: 'Rapido', name: 'Rapido', color: 'bg-yellow-400 text-slate-950 border-yellow-500 hover:bg-yellow-350 font-bold' },
-  { id: 'Namma Yatri', name: 'Namma Yatri', color: 'bg-orange-500 text-white border-orange-600 hover:bg-orange-400 font-semibold' },
-  { id: 'Local', name: 'Local Ride', color: 'bg-slate-700 text-white border-slate-600 hover:bg-slate-650' },
-  { id: 'Other', name: 'Other App', color: 'bg-indigo-650 text-white border-indigo-600 hover:bg-indigo-550' }
+  { id: 'Uber', name: 'Uber', emoji: '⚫', selectedBg: 'bg-slate-900', selectedBorder: 'border-slate-600', selectedText: 'text-white' },
+  { id: 'Ola', name: 'Ola', emoji: '🟢', selectedBg: 'bg-lime-500', selectedBorder: 'border-lime-400', selectedText: 'text-slate-950' },
+  { id: 'Rapido', name: 'Rapido', emoji: '🟡', selectedBg: 'bg-yellow-400', selectedBorder: 'border-yellow-300', selectedText: 'text-slate-950' },
+  { id: 'Namma Yatri', name: 'Namma', emoji: '🟠', selectedBg: 'bg-orange-500', selectedBorder: 'border-orange-400', selectedText: 'text-white' },
+  { id: 'Local', name: 'Local', emoji: '🛺', selectedBg: 'bg-slate-700', selectedBorder: 'border-slate-500', selectedText: 'text-white' },
+  { id: 'Other', name: 'Other', emoji: '📱', selectedBg: 'bg-indigo-600', selectedBorder: 'border-indigo-400', selectedText: 'text-white' }
 ];
 
 const PAYMENT_MODES = ['UPI / Online', 'Cash'];
 
 export default function RideFormModal({ isOpen, onClose, onSubmit, editingRide }) {
-  // Initialize state once during mount
   const [formData, setFormData] = useState(() => {
     if (editingRide) {
       return {
@@ -42,21 +41,13 @@ export default function RideFormModal({ isOpen, onClose, onSubmit, editingRide }
 
   const handlePlatformChange = (platformId) => {
     setFormData(prev => {
-      // Smart payment mode defaults based on platform selection
       let defaultPayment = prev.paymentMode;
       if (platformId === 'Local') {
         defaultPayment = 'Cash';
-      } else if (platformId === 'Uber' || platformId === 'Ola' || platformId === 'Rapido') {
+      } else if (['Uber', 'Ola', 'Rapido', 'Namma Yatri'].includes(platformId)) {
         defaultPayment = 'UPI / Online';
-      } else if (platformId === 'Namma Yatri') {
-        defaultPayment = 'UPI / Online'; // Customer pays driver directly
       }
-
-      return {
-        ...prev,
-        platform: platformId,
-        paymentMode: defaultPayment
-      };
+      return { ...prev, platform: platformId, paymentMode: defaultPayment };
     });
   };
 
@@ -87,178 +78,197 @@ export default function RideFormModal({ isOpen, onClose, onSubmit, editingRide }
 
   if (!isOpen) return null;
 
+  const selectedPlatform = PLATFORMS.find(p => p.id === formData.platform);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 mobile-sheet-backdrop">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-slate-950/85 backdrop-blur-md transition-opacity animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal Container */}
-      <div className="relative glass-panel w-full max-w-lg rounded-3xl shadow-2xl p-6 overflow-hidden max-h-[90vh] overflow-y-auto animate-zoom-in border border-amber-500/10">
+      <div className="relative glass-panel w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[94vh] overflow-y-auto mobile-bottom-sheet" style={{ borderColor: 'rgba(245, 158, 11, 0.12)' }}>
         
-        {/* Decorative corner indicator */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500" />
+        {/* Gradient top accent bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-5">
-          <div>
-            <h3 className="text-xl font-bold text-white font-heading flex items-center gap-2">
-              <span className="text-xl">🛺</span>
-              <span>{editingRide ? 'Edit Ride Details' : 'Record New Ride'}</span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Keep track of your ride fares, payment modes, and distances.</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-850 transition-all border border-slate-800"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        {/* Mobile drag handle */}
+        <div className="md:hidden w-10 h-1 bg-slate-600/60 rounded-full mx-auto mt-3 mb-1" />
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Platform Selector Buttons */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-450 uppercase tracking-wider mb-2.5">
-              Select Booking Platform *
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {PLATFORMS.map((plat) => {
-                const isSelected = formData.platform === plat.id;
-                return (
-                  <button
-                    key={plat.id}
-                    type="button"
-                    onClick={() => handlePlatformChange(plat.id)}
-                    className={`px-3 py-3 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      isSelected 
-                        ? `${plat.color} border-transparent shadow-lg shadow-amber-500/5 scale-[1.02]` 
-                        : 'bg-slate-900/40 border-slate-800 text-slate-350 hover:text-white hover:bg-slate-900/90'
-                    }`}
-                  >
-                    <span className="text-base">
-                      {plat.id === 'Uber' && '⚫'}
-                      {plat.id === 'Ola' && '🟢'}
-                      {plat.id === 'Rapido' && '🟡'}
-                      {plat.id === 'Namma Yatri' && '🟠'}
-                      {plat.id === 'Local' && '🛺'}
-                      {plat.id === 'Other' && '📱'}
-                    </span>
-                    <span>{plat.name}</span>
-                  </button>
-                );
-              })}
+        <div className="p-5 md:p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-lg">
+                🛺
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white font-heading leading-tight">
+                  {editingRide ? 'Edit Ride' : 'New Ride'}
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Log your passenger fare details</p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-slate-800/80 transition-all border border-slate-800/50 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
           </div>
 
-          {/* Fare Amount */}
-          <div className="space-y-1.5">
-            <label className="block text-[11px] font-bold text-slate-450 uppercase tracking-wider">
-              Ride Fare Received (₹) *
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none text-sm font-bold">₹</span>
-              <input
-                type="number"
-                name="amount"
-                required
-                step="1"
-                min="0"
-                value={formData.amount}
-                onChange={handleChange}
-                placeholder="e.g. 150"
-                className="w-full bg-slate-900/60 border border-slate-800 rounded-xl pl-7 pr-4 py-2.5 text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all text-sm font-bold placeholder-slate-650"
-              />
-            </div>
-          </div>
-
-          {/* Payment Method & Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            
+            {/* Platform Selector — Horizontal scrolling tiles */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2.5">
+                Booking Platform
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {PLATFORMS.map((plat) => {
+                  const isSelected = formData.platform === plat.id;
+                  return (
+                    <button
+                      key={plat.id}
+                      type="button"
+                      onClick={() => handlePlatformChange(plat.id)}
+                      className={`relative px-2 py-3.5 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer ${
+                        isSelected 
+                          ? `${plat.selectedBg} ${plat.selectedBorder} ${plat.selectedText} shadow-lg scale-[1.03] ring-1 ring-white/10` 
+                          : 'bg-slate-900/30 border-slate-800/60 text-slate-500 hover:text-slate-300 hover:bg-slate-900/60 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="text-xl leading-none">{plat.emoji}</span>
+                      <span className="text-[10px] leading-none tracking-wide">{plat.name}</span>
+                      {isSelected && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center shadow-md">
+                          <span className="text-[8px] text-slate-950 font-black">✓</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Hero Fare Input */}
+            <div className="relative">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2">
+                Fare Received
+              </label>
+              <div className="relative flex items-center bg-slate-900/50 border border-slate-800/60 rounded-2xl overflow-hidden focus-within:border-amber-500/60 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.1)] transition-all">
+                <span className="pl-4 pr-1 text-amber-400/70 font-black text-xl select-none">₹</span>
+                <input
+                  type="number"
+                  name="amount"
+                  required
+                  step="1"
+                  min="0"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className="flex-1 bg-transparent border-none py-4 pr-4 text-white text-2xl font-black placeholder-slate-700 focus:outline-none"
+                  style={{ fontSize: '1.75rem', minHeight: '52px', border: 'none', boxShadow: 'none', background: 'transparent' }}
+                />
+                {formData.amount && (
+                  <span className="pr-4 text-[10px] text-slate-600 font-semibold whitespace-nowrap">INR</span>
+                )}
+              </div>
+            </div>
+
+            {/* Payment Mode — Segmented Control */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2">
                 Payment Mode
               </label>
-              <select
-                name="paymentMode"
-                value={formData.paymentMode}
-                onChange={handleChange}
-                className="w-full bg-slate-900/65 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-500 text-sm appearance-none"
-              >
-                {PAYMENT_MODES.map(m => (
-                  <option key={m} value={m}>{m}</option>
+              <div className="flex bg-slate-900/60 p-1 rounded-xl border border-slate-800/50 text-xs font-bold select-none">
+                {PAYMENT_MODES.map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, paymentMode: mode }))}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                      formData.paymentMode === mode
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/15 font-extrabold'
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    {mode === 'UPI / Online' ? <Smartphone size={13} /> : <Banknote size={13} />}
+                    <span className="text-[11px]">{mode === 'UPI / Online' ? 'UPI / Online' : 'Cash'}</span>
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
 
+            {/* Date & Distance Row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2">
+                  Ride Date
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  required
+                  value={formData.date}
+                  onChange={handleChange}
+                  className="w-full bg-slate-900/50 border border-slate-800/60 rounded-xl px-3 py-3 text-white text-sm font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2 flex items-center gap-1">
+                  <MapPin size={10} className="text-slate-600" />
+                  <span>KM Distance</span>
+                </label>
+                <input
+                  type="number"
+                  name="distance"
+                  step="0.1"
+                  min="0"
+                  value={formData.distance}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                  className="w-full bg-slate-900/50 border border-slate-800/60 rounded-xl px-3 py-3 text-white text-sm placeholder-slate-700"
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                Ride Date
-              </label>
-              <input
-                type="date"
-                name="date"
-                required
-                value={formData.date}
-                onChange={handleChange}
-                className="w-full bg-slate-900/65 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-500 text-sm font-medium"
-              />
-            </div>
-          </div>
-
-          {/* Distance and Route/Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-1">
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <MapPin size={11} className="text-slate-500" />
-                <span>Distance (km)</span>
-              </label>
-              <input
-                type="number"
-                name="distance"
-                step="0.1"
-                min="0"
-                value={formData.distance}
-                onChange={handleChange}
-                placeholder="Optional (e.g. 8.5)"
-                className="w-full bg-slate-900/65 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-500 text-sm placeholder-slate-650"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                Route / Location / Passenger Notes
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2">
+                Route / Notes
               </label>
               <input
                 type="text"
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
-                placeholder="e.g. Majestic to Indiranagar, double passenger"
-                className="w-full bg-slate-900/65 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 text-sm placeholder-slate-650"
+                placeholder="e.g. Majestic → Indiranagar"
+                className="w-full bg-slate-900/50 border border-slate-800/60 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-700"
               />
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-slate-800/80 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/10 transition-all hover:-translate-y-0.5 cursor-pointer"
-            >
-              {editingRide ? 'Save Ride Details' : 'Save Ride Fares'}
-            </button>
-          </div>
-        </form>
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-3.5 rounded-xl border border-slate-800/60 text-slate-400 hover:text-white text-sm font-semibold transition-colors cursor-pointer hover:bg-slate-900/50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-[2] px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/15 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer"
+              >
+                {editingRide ? '💾 Save Changes' : '🛺 Log Ride'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

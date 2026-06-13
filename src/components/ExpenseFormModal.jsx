@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { X, Fuel, Wrench, Coffee, AlertOctagon, Landmark, ShoppingBag } from 'lucide-react';
+import { X, Fuel, Wrench, Coffee, AlertOctagon, Landmark, ShoppingBag, Banknote } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: 'CNG/Fuel', name: 'CNG / Gas / Fuel', icon: Fuel, color: 'bg-emerald-500/10 text-emerald-400 border-emerald-550/20' },
-  { id: 'Maintenance', name: 'Vehicle Repairs / Service', icon: Wrench, color: 'bg-indigo-500/10 text-indigo-400 border-indigo-550/20' },
-  { id: 'Rent/EMI', name: 'Daily Rent / Loan EMI', icon: Landmark, color: 'bg-blue-500/10 text-blue-400 border-blue-550/20' },
-  { id: 'Food/Tea', name: 'Snacks / Food / Tea', icon: Coffee, color: 'bg-amber-500/10 text-amber-400 border-amber-550/20' },
-  { id: 'Fines', name: 'Police Fine / Challan', icon: AlertOctagon, color: 'bg-rose-500/10 text-rose-400 border-rose-550/20' },
-  { id: 'Others', name: 'Other Expenses', icon: ShoppingBag, color: 'bg-slate-500/10 text-slate-400 border-slate-550/20' },
+  { id: 'CNG/Fuel', name: 'CNG / Fuel', icon: Fuel, emoji: '⛽', selectedBg: 'bg-emerald-500', selectedText: 'text-slate-950' },
+  { id: 'Maintenance', name: 'Repairs', icon: Wrench, emoji: '🔧', selectedBg: 'bg-indigo-500', selectedText: 'text-white' },
+  { id: 'Rent/EMI', name: 'Rent / EMI', icon: Landmark, emoji: '🏦', selectedBg: 'bg-blue-500', selectedText: 'text-white' },
+  { id: 'Food/Tea', name: 'Food / Tea', icon: Coffee, emoji: '☕', selectedBg: 'bg-amber-500', selectedText: 'text-slate-950' },
+  { id: 'Fines', name: 'Challan', icon: AlertOctagon, emoji: '🚨', selectedBg: 'bg-rose-500', selectedText: 'text-white' },
+  { id: 'Others', name: 'Other', icon: ShoppingBag, emoji: '📦', selectedBg: 'bg-slate-600', selectedText: 'text-white' },
 ];
 
 export default function ExpenseFormModal({ isOpen, onClose, onSubmit, editingExpense }) {
@@ -57,75 +57,86 @@ export default function ExpenseFormModal({ isOpen, onClose, onSubmit, editingExp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 mobile-sheet-backdrop">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-slate-950/85 backdrop-blur-md transition-opacity animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal Container */}
-      <div className="relative glass-panel w-full max-w-lg rounded-3xl shadow-2xl p-6 overflow-hidden max-h-[90vh] overflow-y-auto animate-zoom-in border border-rose-500/10">
+      <div className="relative glass-panel w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[94vh] overflow-y-auto mobile-bottom-sheet" style={{ borderColor: 'rgba(244, 63, 94, 0.12)' }}>
         
-        {/* Decorative top border */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-red-500 to-rose-600" />
+        {/* Gradient top accent bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-red-400 to-orange-500" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-5">
-          <div>
-            <h3 className="text-xl font-bold text-white font-heading flex items-center gap-2">
-              <span className="text-rose-450">💸</span>
-              <span>{editingExpense ? 'Edit Rickshaw Expense' : 'Log Auto Expense'}</span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Record costs like gas/fuel, repairs, rent, and food to track net daily profits.</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-850 transition-all border border-slate-800"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        {/* Mobile drag handle */}
+        <div className="md:hidden w-10 h-1 bg-slate-600/60 rounded-full mx-auto mt-3 mb-1" />
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Category Select Grid */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-450 uppercase tracking-wider mb-2.5">
-              Select Expense Category *
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {CATEGORIES.map((cat) => {
-                const isSelected = formData.category === cat.id;
-                const IconComp = cat.icon;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => handleCategorySelect(cat.id)}
-                    className={`px-3 py-3 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      isSelected 
-                        ? `${cat.color} bg-rose-500/20 border-rose-500/40 text-rose-300 shadow-md shadow-rose-500/5` 
-                        : 'bg-slate-900/40 border-slate-800 text-slate-355 hover:text-white hover:bg-slate-900/90'
-                    }`}
-                  >
-                    <IconComp size={16} className={isSelected ? 'text-rose-400' : 'text-slate-400'} />
-                    <span>{cat.name}</span>
-                  </button>
-                );
-              })}
+        <div className="p-5 md:p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center text-lg">
+                💸
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white font-heading leading-tight">
+                  {editingExpense ? 'Edit Expense' : 'Log Expense'}
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Record CNG, repairs, food & more</p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-slate-800/80 transition-all border border-slate-800/50 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
           </div>
 
-          {/* Amount & Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Expense Amount */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-slate-455 uppercase tracking-wider">
-                Expense Amount (₹) *
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            
+            {/* Category Tiles */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2.5">
+                Expense Category
               </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none text-sm font-bold">₹</span>
+              <div className="grid grid-cols-3 gap-2">
+                {CATEGORIES.map((cat) => {
+                  const isSelected = formData.category === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => handleCategorySelect(cat.id)}
+                      className={`relative px-2 py-3.5 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer ${
+                        isSelected 
+                          ? `${cat.selectedBg} ${cat.selectedText} border-transparent shadow-lg scale-[1.03] ring-1 ring-white/10` 
+                          : 'bg-slate-900/30 border-slate-800/60 text-slate-500 hover:text-slate-300 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <span className="text-xl leading-none">{cat.emoji}</span>
+                      <span className="text-[9px] leading-none tracking-wide">{cat.name}</span>
+                      {isSelected && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center shadow-md">
+                          <span className="text-[8px] text-rose-600 font-black">✓</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Hero Amount Input */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2">
+                Expense Amount
+              </label>
+              <div className="relative flex items-center bg-slate-900/50 border border-slate-800/60 rounded-2xl overflow-hidden focus-within:border-rose-500/60 focus-within:shadow-[0_0_0_3px_rgba(244,63,94,0.1)] transition-all">
+                <span className="pl-4 pr-1 text-rose-400/70 font-black text-xl select-none">₹</span>
                 <input
                   type="number"
                   name="amount"
@@ -134,16 +145,17 @@ export default function ExpenseFormModal({ isOpen, onClose, onSubmit, editingExp
                   min="0"
                   value={formData.amount}
                   onChange={handleChange}
-                  placeholder="e.g. 350"
-                  className="w-full bg-slate-900/60 border border-slate-800 rounded-xl pl-7 pr-4 py-2.5 text-white focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all text-sm font-bold placeholder-slate-650"
+                  placeholder="0"
+                  className="flex-1 bg-transparent border-none py-4 pr-4 text-white text-2xl font-black placeholder-slate-700 focus:outline-none"
+                  style={{ fontSize: '1.75rem', minHeight: '52px', border: 'none', boxShadow: 'none', background: 'transparent' }}
                 />
               </div>
             </div>
 
             {/* Date */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-slate-455 uppercase tracking-wider">
-                Date Spent *
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2">
+                Date Spent
               </label>
               <input
                 type="date"
@@ -151,43 +163,43 @@ export default function ExpenseFormModal({ isOpen, onClose, onSubmit, editingExp
                 required
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-rose-500 text-sm font-medium"
+                className="w-full bg-slate-900/50 border border-slate-800/60 rounded-xl px-4 py-3 text-white text-sm font-medium"
               />
             </div>
-          </div>
 
-          {/* Notes */}
-          <div className="space-y-1.5">
-            <label className="block text-[11px] font-bold text-slate-455 uppercase tracking-wider">
-              Expense details (Optional)
-            </label>
-            <input
-              type="text"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              placeholder="e.g. 4.1kg CNG at shell bunk, brake shoe change, tea/samosa"
-              className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-rose-500 text-sm placeholder-slate-650"
-            />
-          </div>
+            {/* Notes */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] mb-2">
+                Details (Optional)
+              </label>
+              <input
+                type="text"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                placeholder="e.g. 4.1kg CNG at Shell, brake shoe change"
+                className="w-full bg-slate-900/50 border border-slate-800/60 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-700"
+              />
+            </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-slate-800/80 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-805 hover:border-slate-700 text-slate-355 hover:text-white text-sm font-medium transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-lg shadow-rose-500/10 transition-all hover:-translate-y-0.5 cursor-pointer"
-            >
-              {editingExpense ? 'Save Expense Changes' : 'Log Expense Fares'}
-            </button>
-          </div>
-        </form>
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-3.5 rounded-xl border border-slate-800/60 text-slate-400 hover:text-white text-sm font-semibold transition-colors cursor-pointer hover:bg-slate-900/50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-[2] px-6 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-400 hover:to-red-400 text-white font-extrabold text-sm shadow-lg shadow-rose-500/15 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer"
+              >
+                {editingExpense ? '💾 Save Changes' : '💸 Log Expense'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

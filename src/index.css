@@ -1,25 +1,101 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-primary: var(--bg-primary);
+  --color-brand-secondary: var(--bg-secondary);
+  --color-brand-card: var(--bg-card);
+  --color-brand-border: var(--border-color);
+  --color-brand-accent: var(--accent-color);
+  --color-brand-glow: var(--accent-glow);
+  --color-brand-text: var(--text-highlight);
+}
+
+:root {
+  /* Default: Rickshaw Mode Theme (Luxury Carbon Amber) */
+  --bg-primary: #080c14;
+  --bg-secondary: #0f1522;
+  --bg-card: rgba(18, 26, 44, 0.45);
+  --border-color: rgba(255, 255, 255, 0.07);
+  --accent-color: #f59e0b; /* Amber-500 */
+  --accent-glow: rgba(245, 158, 11, 0.12);
+  --text-highlight: #fef08a; /* Yellow-200 */
+  --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #fbbf24 0%, #b45309 100%);
+  --accent-glow-shadow: 0 8px 30px rgba(245, 158, 11, 0.15);
+  --mesh-opacity: 0.07;
+  --mesh-color: 245, 158, 11;
+}
+
+/* Personal Mode Theme Overrides (Luxury Deep Ocean Emerald) */
+.app-mode-personal {
+  --bg-primary: #050a0c;
+  --bg-secondary: #0a1315;
+  --bg-card: rgba(12, 26, 28, 0.5);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --accent-color: #10b981; /* Emerald-500 */
+  --accent-glow: rgba(16, 185, 129, 0.12);
+  --text-highlight: #a7f3d0; /* Emerald-200 */
+  --accent-gradient: linear-gradient(135deg, #10b981 0%, #0d9488 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #34d399 0%, #0f766e 100%);
+  --accent-glow-shadow: 0 8px 30px rgba(16, 185, 129, 0.15);
+  --mesh-opacity: 0.07;
+  --mesh-color: 16, 185, 129;
+}
+
 @layer base {
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: #f1f5f9;
+    overflow-x: hidden;
+    transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.025em;
   }
+}
+
+/* Premium Mesh Gradient Overlay */
+.mesh-glow-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 500px;
+  background: radial-gradient(circle 400px at 50% -100px, rgba(var(--mesh-color), var(--mesh-opacity)), transparent 80%);
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.4s ease;
 }
 
 /* Glassmorphism custom helpers */
 .glass-panel {
   background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
 .glass-card {
-  background: rgba(30, 41, 59, 0.4);
+  background: var(--bg-card);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--mesh-color), 0.3);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35), 0 0 15px rgba(var(--mesh-color), 0.05);
 }
 
 /* Custom scrollbars */
@@ -31,22 +107,25 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Color transition utility for theme switching */
 .theme-transition {
-  transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease, text-shadow 0.35s ease;
+  transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Toast animations */
 @keyframes slide-in-up {
   from {
-    transform: translateY(1.5rem) scale(0.98);
+    transform: translateY(1.5rem) scale(0.95);
     opacity: 0;
   }
   to {
@@ -56,90 +135,60 @@
 }
 
 .animate-toast-in {
-  animation: slide-in-up 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: slide-in-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Micro-animations and micro-interactions */
 .interactive-chip {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .interactive-chip:hover {
-  transform: translateY(-1.5px);
+  transform: translateY(-1px);
 }
 .interactive-chip:active {
-  transform: translateY(0.5px) scale(0.96);
+  transform: translateY(0.5px) scale(0.97);
 }
 
-/* Premium focus glows */
-.focus-glow-amber:focus {
-  box-shadow: 0 0 14px 1px rgba(245, 158, 11, 0.25);
-  border-color: rgba(245, 158, 11, 0.6) !important;
+/* Tactile Premium Forms & Inputs */
+input, 
+select, 
+textarea {
+  background-color: rgba(9, 13, 22, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease !important;
+  border-radius: 0.75rem !important;
 }
 
-.focus-glow-emerald:focus {
-  box-shadow: 0 0 14px 1px rgba(16, 185, 129, 0.25);
-  border-color: rgba(16, 185, 129, 0.6) !important;
+input:focus, 
+select:focus, 
+textarea:focus {
+  background-color: rgba(9, 13, 22, 0.9) !important;
+  outline: none !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 3px var(--accent-glow) !important;
 }
 
-/* ==========================================
-   MOBILE DESIGN UPGRADE & ACCESSIBILITY LAYER
-   ========================================== */
+/* Premium Buttons */
+.btn-primary {
+  background: var(--accent-gradient);
+  color: #020617;
+  font-weight: 700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: var(--accent-glow-shadow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  background: var(--accent-gradient-hover);
+  box-shadow: 0 10px 35px rgba(var(--mesh-color), 0.25);
+}
+
+.btn-primary:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+
+/* Responsive Overrides for Mobile viewports (< 768px) */
 @media (max-width: 767.98px) {
-  /* Scale up typography for excellent readability on smaller viewports */
-  .text-xs, 
-  .text-\[11px\],
-  .text-\[10px\],
-  .text-\[9px\] {
-    font-size: 0.85rem !important; /* ~13.6px - much larger and clearer than 9px */
-    line-height: 1.25rem !important;
-  }
-  
-  .text-\[8px\] {
-    font-size: 0.75rem !important; /* ~12px */
-  }
-
-  .text-sm {
-    font-size: 0.95rem !important; /* ~15.2px */
-    line-height: 1.4rem !important;
-  }
-
-  .text-base {
-    font-size: 1.05rem !important; /* ~16.8px */
-  }
-
-  .text-lg {
-    font-size: 1.2rem !important;
-  }
-
-  .text-xl {
-    font-size: 1.35rem !important;
-  }
-
-  .text-2xl {
-    font-size: 1.6rem !important;
-  }
-
-  .text-3xl {
-    font-size: 1.85rem !important;
-  }
-
-  /* Expand touch targets to at least 44px height (Apple/Google Standards) */
-  button, 
-  .btn,
-  [role="button"] {
-    min-height: 44px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  /* Specific buttons that need comfortable horizontal padding */
-  .overflow-x-auto button {
-    padding-left: 1.25rem !important;
-    padding-right: 1.25rem !important;
-    min-width: 100px !important;
-  }
-
   /* Forms & inputs touch target enlargement */
   input, 
   select, 
@@ -152,57 +201,128 @@
     padding-right: 1rem !important;
   }
 
-  /* SVG Icon scaling */
-  button svg,
-  a svg,
-  .p-3.rounded-xl svg {
-    width: 20px !important;
-    height: 20px !important;
-  }
-
   /* Floating bottom navigation bar scaling */
   nav.fixed {
-    bottom: 1rem !important;
-    left: 0.75rem !important;
-    right: 0.75rem !important;
-    padding: 0.75rem 0.5rem !important;
-    border-radius: 20px !important;
-  }
-
-  nav.fixed button {
-    gap: 0.35rem !important;
-  }
-
-  nav.fixed button svg {
-    width: 22px !important;
-    height: 22px !important;
-  }
-
-  nav.fixed button span {
-    font-size: 0.75rem !important; /* ~12px label texts */
-  }
-
-  /* Modal layout expansion */
-  .glass-panel {
+    bottom: 1.25rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    padding: 0.65rem 0.5rem !important;
     border-radius: 24px !important;
-    padding: 1.5rem !important;
+  }
+}
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up-sheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fab-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 0.4; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.pulse-ring-glow {
+  animation: pulse-ring 3s infinite ease-in-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out forwards;
+}
+
+/* Bottom Sheet and FAB specific styles */
+@media (max-width: 767.98px) {
+  .mobile-bottom-sheet {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 94vh !important;
+    border-top-left-radius: 32px !important;
+    border-top-right-radius: 32px !important;
+    border-bottom-left-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+    background: rgba(10, 15, 30, 0.97) !important;
+    backdrop-filter: blur(30px) !important;
+    -webkit-backdrop-filter: blur(30px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    animation: slide-up-sheet 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    z-index: 50 !important;
+    box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.6) !important;
   }
 
-  /* Spacing and layout flow optimizations */
-  .space-y-8 > :not([hidden]) ~ :not([hidden]) {
-    margin-top: 2rem !important;
+  .mobile-sheet-backdrop {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
   }
-  
-  .gap-4 {
-    gap: 1.25rem !important;
-  }
+}
 
-  .gap-3 {
-    gap: 1rem !important;
-  }
+/* FAB Action Speed Dial Transition */
+.fab-speed-dial-item {
+  animation: fab-pop-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
 
-  /* Lists and grid cards action targets sizing */
-  .p-3.rounded-xl {
-    padding: 0.85rem !important;
-  }
+/* Swipe Actions Styles */
+.swipe-container {
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 1.25rem;
+}
+
+.swipe-actions-bg {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  left: 0 !important;
+  z-index: 0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  border-radius: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.swipe-foreground {
+  position: relative !important;
+  z-index: 10 !important;
+  width: 100% !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.no-swipe {
+  touch-action: pan-y !important;
+}
+
+/* Hide defaults scrollbars where needed */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
