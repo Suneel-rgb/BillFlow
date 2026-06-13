@@ -234,18 +234,18 @@ export default function PersonalDashboard({
 
             {/* Circular Progress Wheel */}
             <div className="relative flex justify-center items-center flex-shrink-0">
-              <svg className="w-28 h-28 transform -rotate-90">
+              <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 128 128">
                 <circle
-                  cx="56"
-                  cy="56"
+                  cx="64"
+                  cy="64"
                   r={radius}
                   stroke="#0f172a"
                   strokeWidth="8"
                   fill="transparent"
                 />
                 <circle
-                  cx="56"
-                  cy="56"
+                  cx="64"
+                  cy="64"
                   r={radius}
                   stroke={isBudgetExceeded ? "#f87171" : "#10b981"}
                   strokeWidth="8"
