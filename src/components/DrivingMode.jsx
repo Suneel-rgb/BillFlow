@@ -21,60 +21,14 @@ export default function DrivingMode({
   
   const recognitionRef = useRef(null);
 
-  // Initialize Speech Recognition
+  // Cleanup speech recognition on unmount
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setSpeechError('Web Speech API is not supported in this browser.');
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-IN'; // Optimized for Indian English speakers
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      setTranscript('');
-      setSpeechError('');
-      if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate(30); // light haptic start
-      }
-    };
-
-    recognition.onresult = (event) => {
-      const result = event.results[0][0].transcript;
-      setTranscript(result);
-      setIsListening(false);
-      handleParsedSpeech(result);
-    };
-
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error', event.error);
-      setIsListening(false);
-      if (event.error === 'no-speech') {
-        setSpeechError("No speech detected. Tap button to try again.");
-      } else {
-        setSpeechError(`Error: ${event.error}. Tap to retry.`);
-      }
-      if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate([40, 40]); // error haptic
-      }
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognitionRef.current = recognition;
-
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.abort();
       }
     };
-  }, [appMode]);
+  }, []);
 
   const toggleListening = () => {
     if (isListening) {
@@ -83,9 +37,59 @@ export default function DrivingMode({
       setPendingEntry(null);
       setSpeechError('');
       try {
-        recognitionRef.current?.start();
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          setSpeechError('Web Speech API is not supported in this browser.');
+          return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-IN'; // Optimized for Indian English speakers
+
+        recognition.onstart = () => {
+          setIsListening(true);
+          setTranscript('');
+          setSpeechError('');
+          if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(30); // light haptic start
+          }
+        };
+
+        recognition.onresult = (event) => {
+          const result = event.results[0][0].transcript;
+          setTranscript(result);
+          setIsListening(false);
+          handleParsedSpeech(result);
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+          if (event.error === 'no-speech') {
+            setSpeechError("No speech detected. Tap button to try again.");
+          } else if (event.error === 'not-allowed') {
+            setSpeechError("Microphone blocked. Web Speech API requires HTTPS (or localhost) and microphone permissions enabled in browser settings.");
+          } else if (event.error === 'network') {
+            setSpeechError("Network error. Active internet connection is required for Web Speech recognition.");
+          } else {
+            setSpeechError(`Error: ${event.error}. Tap to retry.`);
+          }
+          if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate([40, 40]); // error haptic
+          }
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
       } catch (e) {
-        console.error(e);
+        console.error('Failed to start speech recognition', e);
+        setSpeechError(`Failed to start microphone: ${e.message}`);
       }
     }
   };
